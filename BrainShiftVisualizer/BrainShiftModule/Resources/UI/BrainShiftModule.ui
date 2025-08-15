@@ -110,7 +110,7 @@
    <item row="7" column="0">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Output Volume:</string>
+      <string>Specify Output Volume:</string>
      </property>
     </widget>
    </item>
@@ -174,7 +174,7 @@
     </widget>
    </item>
    <item row="22" column="1">
-    <widget class="qMRMLNodeComboBox" name="MRMLReplacementVolume">
+    <widget class="qMRMLNodeComboBox" name="loadedTransformVolume">
      <property name="contextMenuPolicy">
       <enum>Qt::DefaultContextMenu</enum>
      </property>
@@ -419,6 +419,16 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="38" column="1">
+    <widget class="QCheckBox" name="enableJacobianToggle">
+     <property name="toolTip">
+      <string>View Jacobian </string>
+     </property>
+     <property name="text">
+      <string>Enable Magnitude of Jacobian Determinant Visualization</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
