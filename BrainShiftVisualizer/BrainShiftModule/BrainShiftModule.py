@@ -484,12 +484,13 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                 
             )
             
-            # change to color thats selected
-            colorNode = self.ui.colorMapSelector.currentNode()
-            if colorNode and self._parameterNode.displacementMagnitudeVolume:
-                displayNode = self._parameterNode.displacementMagnitudeVolume.GetDisplayNode()
-                if displayNode:
-                    displayNode.SetAndObserveColorNodeID(colorNode.GetID())
+            # TODO: Add this back in if we want to directly load the colour map 
+            # colorNode = self.ui.colorMapSelector.currentNode()
+            # if colorNode and self._parameterNode.displacementMagnitudeVolume:
+            #     print("In 490!!!")
+            #     displayNode = self._parameterNode.displacementMagnitudeVolume.GetDisplayNode()
+            #     if displayNode:
+            #         displayNode.SetAndObserveColorNodeID(colorNode.GetID())
 
 
 
@@ -527,13 +528,9 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         '''
         #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
-        #clonedDisplacementVolume = slicer.mrmlScene.CopyNode(selectedVolume)
 
         usVolume = self.ui.referenceVolume.currentNode()
-        
-        #print(f"Displacement Volume: {self._parameterNode.displacementMagnitudeVolume}")
-
-        # referenceVolume = self._parameterNode.referenceVolume
+       
         backgroundVolume = self._parameterNode.backgroundVolume
         
         state = self.ui.enableUsBorderDisplay.checkState()
@@ -542,22 +539,52 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
 
         # visualize it
-        slicer.util.setSliceViewerLayers(
-            background=backgroundVolume,
-            foreground=selectedVolume
-        )
+        # slicer.util.setSliceViewerLayers(
+        #     background=backgroundVolume,
+        #     foreground=selectedVolume
+        # )
         
         self.onLoadExpertLabelsClicked()
+        
+        persistentDisplayNode = selectedVolume.GetDisplayNode()
+        # newDisplayNode = slicer.mrmlScene.AddNewNodeByClass(persistentDisplayNode.GetClassName())
+        # newDisplayNode.Copy(persistentDisplayNode)
+        # #newDisplayNode = originalDisplayNode
 
+        # Attach the new display node to the same volume
+        #selectedVolume.RemoveAllDisplayNodeIDs()
+
+        internalDisplayNode = slicer.mrmlScene.AddNewNodeByClass(persistentDisplayNode.GetClassName())
+        #internalDisplayNode.Copy(persistentDisplayNode)
+        internalDisplayNode = persistentDisplayNode
+        selectedVolume.AddAndObserveDisplayNodeID(internalDisplayNode.GetID())
+
+        #persistentDisplayNode.AddAndObserveDisplayNodeID(newDisplayNode.GetID())
+        # print(selectedVolume.GetDisplayNode())
+        # print(selectedVolume.GetClassName())
+
+        numDisplayNodes = selectedVolume.GetNumberOfDisplayNodes()      
+        print(f"Number of display nodes: {numDisplayNodes}")
+        print("Update 1")
         # change to selected color
         colorNode = self.ui.colorMapSelector.currentNode()
         if colorNode:
-            displayNode = selectedVolume.GetDisplayNode()
-            displayNode.SetAndObserveColorNodeID(colorNode.GetID())
-            displayNode.Modified()
+            
+            internalDisplayNode.SetAndObserveColorNodeID(colorNode.GetID())
+            #internalDisplayNode.Modified()
+            #displayNode.SetAndObserveColorNodeID(colorNode.GetID())
+            #displayNode.Modified() #this line is directly modifying the volume - problem if incorrect volume is loaded in
 
         normalizedValue = self.ui.opacitySlider.value / 100
-        slicer.util.setSliceViewerLayers(foregroundOpacity=normalizedValue)
+        internalDisplayNode.SetOpacity(normalizedValue)
+        # Do NOT set it as foreground of another volume to avoid cropping
+        for sliceName in slicer.app.layoutManager().sliceViewNames():
+            sliceComposite = slicer.app.layoutManager().sliceWidget(sliceName).mrmlSliceCompositeNode()
+            sliceComposite.SetBackgroundVolumeID(backgroundVolume.GetID())  # your US/reference
+            sliceComposite.SetForegroundVolumeID(selectedVolume.GetID())    # displacement field
+            sliceComposite.SetForegroundOpacity(normalizedValue)
+
+        #slicer.util.setSliceViewerLayers(foregroundOpacity=normalizedValue)
 
         # set max and min of threshold slider
         imageData = selectedVolume.GetImageData()
@@ -656,41 +683,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.crosshairObserverTag = None
 
 
-    # def onToggleJacobianCheckbox(self, enabled: bool) -> None:
-    #     print("on Jacobian Display")
-    #     if enabled:
-          
-    
-    #         with slicer.util.tryWithErrorDisplay(_("Failed to compute voxel-wise displacement."), waitCursor=True):
-    #             logging.info(f"Reference Volume: {self._parameterNode.referenceVolume}")
-    #             logging.info(f"Transform Node: {self._parameterNode.transformNode}")
-    #             logging.info(f"Displacement Volume: {self._parameterNode.displacementMagnitudeVolume}")
-
-
-    #         # Create magnitude of Jacobian determinant
-    #         self.logic.computeJacobianDeterminant(
-    #             referenceVolume=self._parameterNode.referenceVolume,
-    #             transformNode=self._parameterNode.transformNode
-    #         )
-            
-    #         slicer.util.setSliceViewerLayers(
-    #             background=self._parameterNode.backgroundVolume,
-    #             foreground=self._parameterNode.displacementMagnitudeVolume
-                                
-    #         )
-            
-    #         # change to color thats selected
-    #         colorNode = self.ui.colorMapSelector.currentNode()
-    #         if colorNode and self._parameterNode.displacementMagnitudeVolume:
-    #             displayNode = self._parameterNode.displacementMagnitudeVolume.GetDisplayNode()
-    #             if displayNode:
-    #                 displayNode.SetAndObserveColorNodeID(colorNode.GetID())
-            
-    #         state = self.ui.enableUsBorderDisplay.checkState()
-    #         self.logic.showNonZeroWireframe(foregroundVolume=self._parameterNode.transformNode, state=state, reload=True)
-            
-    #     else:
-    #         self.onLoadDisplacementVolume() #Reload the other colour map if not clicked
 
 
 
@@ -876,7 +868,7 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
         
         volumesLogic = slicer.modules.volumes.logic()
         
-        outputVolume = volumesLogic.CloneVolume(slicer.mrmlScene, referenceVolume, referenceVolume.GetName() + "_magnitude")
+        # outputVolume = volumesLogic.CloneVolume(slicer.mrmlScene, referenceVolume, referenceVolume.GetName() + "_magnitude")
         
         # Get reference image as SimpleITK image
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
