@@ -187,11 +187,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # connect US Border display checkbox
         self.ui.enableUsBorderDisplay.toggled.connect(self.onToggleUsDisplay)
         
-      # connect Jacobian determinant checkbox
-        #self.ui.enableJacobianCheckbox.setChecked(False)  # start disabled
-        #self.ui.enableJacobianToggle.connect('toggled(bool)', self.onToggleVolumeView)
 
-        
         
         # connect threshold slider
         self.ui.thresholdSlider.connect("valuesChanged(double,double)", self.onThresholdSliderChanged)
@@ -360,10 +356,23 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onSceneUpdated(self, caller, event):
         self.updateLandmarkSelectorComboBox()
+    
+    
     def enter(self) -> None:
         """Called each time the user opens this module."""
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
+
+
+    # def setFixedImage(self, volumeNode):
+    #     if not volumeNode:
+    #         return
+    #     if self._parameterNode:
+    #         self._parameterNode.SetParameter("FixedImageID", volumeNode.GetID())
+    #     # Optionally apply grey map immediately
+    #     if volumeNode.GetDisplayNode():
+    #         volumeNode.GetDisplayNode().SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
+
 
     def exit(self) -> None:
         """Called each time the user opens a different module."""
@@ -384,21 +393,64 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if self.parent.isEntered:
             self.initializeParameterNode()
 
+
+    def _forceGreyColormap(self, displayNode):
+        if displayNode and displayNode.GetColorNodeID() != "vtkMRMLColorTableNodeGrey":
+            displayNode.SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
+            displayNode.AutoWindowLevelOn()
+
+
+
+    def removeDisplayNodesFromVolume(self, volumeNode):
+        if not volumeNode:
+            return
+        # Get all display nodes linked to this volume
+        # displayNodes = volumeNode.GetDisplayNodes()
+        #for displayNode in volumeNode.GetDisplayNode():
+        for i in range(volumeNode.GetNumberOfDisplayNodes()):
+            displayNode = volumeNode.GetNthDisplayNode(i)
+            if displayNode:
+                displayNode.SetVisibility(False)
+        #slicer.mrmlScene.RemoveNode(volumeNode.GetDisplayNode())
+        # Disconnect volume from any display nodes
+        #volumeNode.RemoveAllDisplayNodeIDs()
+
+
     def initializeParameterNode(self) -> None:
         """Ensure parameter node exists and observed."""
-        # Parameter node stores all user choices in parameter values, node selections, etc.
-        # so that when the scene is saved and reloaded, these settings are restored.
-
         self.setParameterNode(self.logic.getParameterNode())
+        
+      
+        #Reset the slice viewers to have no foreground initially on entering and reloading module - much cleaner
+        layoutManager = slicer.app.layoutManager()
+        for sliceViewName in layoutManager.sliceViewNames():
+            compositeNode = layoutManager.sliceWidget(sliceViewName).mrmlSliceCompositeNode()
+            compositeNode.SetForegroundVolumeID(None)
     
+        backgroundVolumeID = self._parameterNode.backgroundVolume.GetID() if self._parameterNode.backgroundVolume else None
+        
+        if backgroundVolumeID and self._parameterNode.backgroundVolume.GetDisplayNode():
+            displayNode = self._parameterNode.backgroundVolume.GetDisplayNode()
+            displayNode.SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
+            displayNode.AutoWindowLevelOn()
+
+        referenceVolumeID = self._parameterNode.referenceVolume.GetID() if self._parameterNode.referenceVolume else None
+        
+        if referenceVolumeID and self._parameterNode.referenceVolume.GetDisplayNode():
+            displayNode = self._parameterNode.referenceVolume.GetDisplayNode()
+            displayNode.SetAndObserveColorNodeID("vtkMRMLColorTableNodeGrey")
+            displayNode.AutoWindowLevelOn()
+
+        
+                
   
     def onNodeChanged(self, caller, event) -> None:
         #newNode = callData
         #if isinstance(newNode, slicer.vtkMRMLMarkupsFiducialNode):
             #print(f"New fiducial node added: {newNode.GetName()}")
         self.updateLandmarkSelectorComboBox()
-    
 
+    
     def updateLandmarkSelectorComboBox(self):
         '''
         Tracks which files to add to the selection box for the available landmarks
@@ -536,32 +588,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
 
-    # def onToggleVolumeView(self) -> None:
-    #     """Toggle between displacement and Jacobian volumes in slice viewer."""
-
-    #     #currentForeground = slicer.util.get
-    #     fgID = slicer.app.layoutManager().sliceWidget("Red").mrmlSliceCompositeNode().GetForegroundVolumeID()
-
-    #     print("id", fgID)
-
-    #     # currentForeground = slicer.util.getNode(self._parameterNode.).GetID() \
-    #     #     if self._parameterNode.foregroundVolume else None
-    #     print("dispID", self._parameterNode.displacementMagnitudeVolume.GetID())
-
-    #     dispID = self._parameterNode.displacementMagnitudeVolume.getParameterNode()
-    #     jacID = self._parameterNode.jacobianMagnitudeVolume.getParameterNode()
-
-
-    #     if fgID == dispID:
-    #         slicer.util.setSliceViewerLayers(foreground=self._parameterNode.jacobianMagnitudeVolume)
-    #         self._parameterNode.foregroundVolume = self._parameterNode.jacobianMagnitudeVolume
-    #         logging.info("Switched to Jacobian magnitude volume.")
-    #     else:
-    #         slicer.util.setSliceViewerLayers(foreground=self._parameterNode.displacementMagnitudeVolume)
-    #         self._parameterNode.foregroundVolume = self._parameterNode.displacementMagnitudeVolume
-    #         logging.info("Switched to displacement magnitude volume.")
-
-
     def onLoadDisplacementVolume(self) -> None:
 
         '''
@@ -571,6 +597,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
 
+
         usVolume = self.ui.referenceVolume.currentNode()
        
         backgroundVolume = self._parameterNode.backgroundVolume
@@ -579,8 +606,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         self.logic.showNonZeroWireframe(foregroundVolume=usVolume, state=state, reload=True)
         
-        # slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(selectedVolume)    
-
 
         # visualize it
         # slicer.util.setSliceViewerLayers(
@@ -918,10 +943,9 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
         if not transformNode:
             raise ValueError("Transform node is invalid")
         
-        volumesLogic = slicer.modules.volumes.logic()
+        #volumesLogic = slicer.modules.volumes.logic()
         
-        # outputVolume = volumesLogic.CloneVolume(slicer.mrmlScene, referenceVolume, referenceVolume.GetName() + "_magnitude")
-        
+
         # Get reference image as SimpleITK image
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
 
