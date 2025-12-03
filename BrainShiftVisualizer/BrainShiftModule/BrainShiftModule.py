@@ -49,7 +49,7 @@ class BrainShiftModule(ScriptedLoadableModule):
         self.parent.title = _("BrainShiftModule")
         self.parent.categories = [translate("qSlicerAbstractCoreModule", "Examples")]
         self.parent.dependencies = [] 
-        self.parent.contributors = ["Elise Donszelmann-Lund (McGill), Isabel Frolick (McGill), Étienne Léger"]  
+        self.parent.contributors = [" Isabel Frolick (McGill), Elise Donszelmann-Lund (McGill), Étienne Léger"]  
         self.parent.helpText = _("""
             Visualize Brain Shift (mm) per voxel
             See more information in <a href="https://github.com/organization/projectname#BrainShiftModule">module documentation</a>.
@@ -99,12 +99,46 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNodeGuiTag = None
 
 
+
     def setup(self) -> None:
         """Called when the user opens the module the first time and the widget is initialized."""
         ScriptedLoadableModuleWidget.setup(self)
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
+
+        # instructionsLabel = qt.QLabel("Welcome to DisplaceMMent, the intuitive visualization module for non-linear registration.  To get started, select your registered fixed image, moving image, and related transformation. ") 
+        # instructionsLabel.setWordWrap(True)
+
+        # === Add the instructions (collapsible, to the top)===
+
+        
+        instructionsCollapsibleButton = ctk.ctkCollapsibleButton()
+        instructionsCollapsibleButton.text = "Instructions"
+        instructionsCollapsibleButton.collapsed = True  # Start collapsed
+        self.layout.insertWidget(1, instructionsCollapsibleButton)
+
+        instructionsLayout = qt.QVBoxLayout(instructionsCollapsibleButton)
+        
+        #instructionsLabel = qt.QLabel("  To get started, select your registered fixed image, moving image, and related transformation. ") 
+        #instructionsLabel.setWordWrap(True)
+        instructionsLabel = qt.QLabel()
+        instructionsLabel.setText("""
+        <b>Instructions:</b><br><br>
+        Welcome to DisplaceMMent, the intuitive visualization module for non-linear registration!<br><br>
+        To get started, select your registered fixed image, moving image, and related transformation. 
+        # 1. First step<br>
+        # 2. Second step<br>
+        # <i>Note: Important information</i>
+        """)
+        instructionsLabel.setWordWrap(True)
+        self.layout.addWidget(instructionsLabel)
+        #instructionsLayout.addWidget(instructionsLabel)
+        instructionsLayout.addWidget(instructionsLabel)
+        #self.layout.insertWidget(1, instructionsLabel)
+        
+        # === LOAD UI FILE ===
+
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/BrainShiftModule.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
@@ -113,6 +147,43 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
         # "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
+
+        # === SECTION 1 IMAGES LOADING ===
+
+        # Section 1: INPUT IMAGES (always visible, non-collapsible)
+        inputGroup = qt.QGroupBox("Input Images")
+        inputGroup.setStyleSheet("QGroupBox { font-weight: bold; font-size: 14px; margin-top: 10px; }")
+        self.layout.addWidget(inputGroup)
+        
+        inputLayout = qt.QFormLayout(inputGroup)
+        inputLayout.setContentsMargins(15, 15, 15, 15)
+        inputLayout.setSpacing(8)
+        
+        inputLayout.addRow("Moving Image:", self.ui.referenceVolume)
+        inputLayout.addRow("Fixed Image:", self.ui.backgroundVolume)
+        inputLayout.addRow("Transformation:", self.ui.transformNode)
+        inputLayout.addRow("Specify Output Volume:", self.ui.displacementMagnitudeVolume)
+        inputLayout.addRow(" ", self.ui.applyButton)
+
+        
+        # Section 2: PROCESSING (always visible)
+        processingGroup = qt.QGroupBox("Processing")
+        processingGroup.setStyleSheet("QGroupBox { font-weight: bold; font-size: 14px; margin-top: 10px; }")
+        self.layout.addWidget(processingGroup)
+        
+        processingLayout = qt.QVBoxLayout(processingGroup)
+        processingLayout.setContentsMargins(15, 15, 15, 15)
+        processingLayout.setSpacing(8)
+        
+        outputLayout = qt.QHBoxLayout()
+        outputLayout.addWidget(qt.QLabel("Load Displacement Field for Visualization:"))
+        outputLayout.addWidget(self.ui.loadedTransformVolume)
+        outputLayout.addWidget(self.ui.colorMapSelector)
+        processingLayout.addLayout(outputLayout)
+
+        processingLayout.addWidget(self.ui.loadDisplacementVolumeButton)
+
+
 
         # set the scene for each individual node widget
         self.ui.referenceVolume.setMRMLScene(slicer.mrmlScene)
@@ -183,8 +254,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.enableHoverDisplayCheckbox.setChecked(False)  # start disabled
         self.ui.enableHoverDisplayCheckbox.connect("toggled(bool)", self.onToggleHoverDisplay)
 
-        self.line_edit = qt.QLineEdit(self)
-        self.layout.addWidget(self.line_edit)
+        # self.line_edit = qt.QLineEdit(self)
+        # self.layout.addWidget(self.line_edit)
 
         # self.line_edit = qt.QLineEdit()
         # self.layout().addWidget(self.line_edit)
@@ -323,7 +394,15 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         print("Created new JacobianMap node")
         return colorNode
 
-
+    def createInputSection(self):
+        section = ctk.ctkCollapsibleButton()
+        section.text = "1. Input Volumes"
+        self.layout.addWidget(section)
+        
+        layout = qt.QFormLayout(section)
+        layout.addRow("Moving Image:", self.referenceVolume)
+        layout.addRow("Fixed Image:", self.backgroundVolume)
+        layout.addRow("Transformation:", self.transformNode)
 
 
     def onConvertTagFCSVButtonClicked(self):
@@ -829,7 +908,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         state = self.ui.enableUsBorderDisplay.checkState()
 
-        self.logic.showNonZeroWireframe(foregroundVolume=usVolume, state=state, reload=True)
+        #self.logic.showNonZeroWireframe(foregroundVolume=usVolume, state=state, reload=True)
         
         # slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(selectedVolume)    
 
