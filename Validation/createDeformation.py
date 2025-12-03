@@ -19,14 +19,14 @@ Requirements:
     Do : voxel -> voxel-based deformation 
 
 """
-
+import SimpleITK as sitk
 import numpy as np
 import nibabel as nib
 import plotly.graph_objects as go
 import json
 import sys
 from scipy.ndimage import map_coordinates
-
+import nrrd
 radius = 60.0
 
 def load_sphere_and_landmarks(sphere_path, landmarks_path):
@@ -453,6 +453,113 @@ def get_landmark_coords(landmarks_data):
     return landmark_coords, landmark_names
 
 
+
+# def save_displacement_field_nrrd(displacement_field, affine, deformation_type, output_path=None):
+#     """
+#     Save displacement field as NRRD file
+    
+#     Parameters:
+#     -----------
+#     displacement_field : tuple of numpy arrays
+#         Displacement field in voxel space (di, dj, dk)
+#     affine : numpy array
+#         Affine transformation matrix
+#     deformation_type : str
+#         Type of deformation (for filename)
+#     output_path : str
+#         Output filename (optional)
+        
+#     Returns:
+#     --------
+#     output_path : str
+#         Path where file was saved
+#     """
+#     if output_path is None:
+#         output_path = f'GeometricTestCase/displacement_field_{deformation_type}.nrrd'
+    
+#     # Stack displacement components into 4D array [X, Y, Z, 3]
+#     (di, dj, dk) = displacement_field
+#     displacement_array = np.stack([di, dj, dk], axis=-1)
+    
+#     # Create NRRD header with spatial information
+#     header = {
+#         'type': 'float',
+#         'dimension': 4,
+#         'space': 'left-posterior-superior',  # Standard medical imaging space
+#         'sizes': np.array(displacement_array.shape),
+#         'space directions': np.array([
+#             affine[0, :3],
+#             affine[1, :3],
+#             affine[2, :3],
+#             [np.nan, np.nan, np.nan]  # Vector dimension has no spatial direction
+#         ]),
+#         'kinds': ['domain', 'domain', 'domain', 'vector'],
+#         'space origin': affine[:3, 3],
+#         'encoding': 'gzip'
+#     }
+    
+#     # Save as NRRD
+#     nrrd.write(output_path, displacement_array.astype(np.float32), header)
+    
+#     print(f"  Saved displacement field (NRRD) to: {output_path}")
+#     return output_path
+
+
+def save_displacement_field_as_transform(displacement_field, affine, deformation_type, output_path=None):
+    """
+    Save displacement field as ITK transform file (.h5) for 3D Slicer
+    
+    Parameters:
+    -----------
+    displacement_field : tuple of numpy arrays
+        Displacement field in voxel space (di, dj, dk)
+    affine : numpy array
+        Affine transformation matrix
+    deformation_type : str
+        Type of deformation (for filename)
+    output_path : str
+        Output filename (optional)
+        
+    Returns:
+    --------
+    output_path : str
+        Path where file was saved
+    """
+    if output_path is None:
+        output_path = f'GeometricTestCase/displacement_field_{deformation_type}.h5'
+    
+    # Stack displacement components into 4D array [X, Y, Z, 3]
+    (di, dj, dk) = displacement_field
+    displacement_array = np.stack([di, dj, dk], axis=-1)
+    
+    # Create SimpleITK displacement field image
+    # Note: SimpleITK uses (Z, Y, X, components) ordering
+    displacement_sitk = sitk.GetImageFromArray(
+        displacement_array.transpose(2, 1, 0, 3),  # Reorder to ZYX
+        isVector=True
+    )
+    
+    # Set spacing and origin from affine matrix
+    spacing = np.sqrt(np.sum(affine[:3, :3]**2, axis=0))
+    origin = affine[:3, 3]
+    
+    displacement_sitk.SetSpacing(spacing.tolist())
+    displacement_sitk.SetOrigin(origin.tolist())
+    
+    # Extract direction matrix from affine
+    direction_matrix = affine[:3, :3] / spacing
+    displacement_sitk.SetDirection(direction_matrix.flatten().tolist())
+    
+    # Create displacement field transform
+    displacement_transform = sitk.DisplacementFieldTransform(displacement_sitk)
+    
+    # Write transform file
+    sitk.WriteTransform(displacement_transform, output_path)
+    
+    print(f"  Saved displacement field transform to: {output_path}")
+    return output_path
+
+
 def displacement(sphere_path, landmarks_path, deformation_type='compression',
                           output_html=None, show_surface=True, mesh_downsample=2,
                           mesh_opacity=0.4, save_deformed_volume=True, 
@@ -536,6 +643,7 @@ def displacement(sphere_path, landmarks_path, deformation_type='compression',
     if save_disp_field:
         displacement_field_path = save_displacement_field(displacement_field, affine, deformation_type)
         #print(f"  Saved displacement field to: {displacement_field_path}")
+        displacement_field_nrrd_path = save_displacement_field_as_transform(displacement_field, affine, deformation_type)
 
 
     # # OPTIONAL: Verify landmarks are on/near surface
