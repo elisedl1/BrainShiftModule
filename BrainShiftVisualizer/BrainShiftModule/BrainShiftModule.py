@@ -495,7 +495,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         processingLayout.setLabelAlignment(qt.Qt.AlignRight | qt.Qt.AlignVCenter)
 
         processingLayout.addRow("Displacement Field:", self.ui.loadedTransformVolume)
-        processingLayout.addRow("Color Map:", self.ui.colorMapSelector)
+        processingLayout.addRow("Colour Map:", self.ui.colorMapSelector)
         
 
         visualizeVolumeLayout = qt.QHBoxLayout()
@@ -1208,6 +1208,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
+        flag = self.getBrainShiftFlag(selectedVolume)
+        print("BrainShiftFlag =", flag)
 
         if not selectedVolume or not selectedVolume.GetDisplayNode():
             slicer.util.errorDisplay("Please select a volume before loading.")
@@ -1388,6 +1390,36 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             currentWindow = displayNode.GetWindow()
             displayNode.SetWindowLevel(currentWindow, value)
 
+    def getBrainShiftFlag(self, volumeNode):
+        """
+        Returns the BrainShiftFlag value stored in FieldData or PointData.
+        FieldData → global flag (1 value)
+        PointData → per-voxel array (returns first value)
+        """
+        if not volumeNode:
+            return None
+
+        imageData = volumeNode.GetImageData()
+        if not imageData:
+            return None
+
+        # --- 1) Try FieldData (global flag) ---
+        fd = imageData.GetFieldData()
+        if fd:
+            arr = fd.GetArray("BrainShiftFlag")
+            if arr and arr.GetNumberOfTuples() > 0:
+                return int(arr.GetValue(0))
+
+        # --- 2) Try PointData (voxel mask) ---
+        pd = imageData.GetPointData()
+        if pd:
+            arr = pd.GetArray("BrainShiftFlag")
+            if arr and arr.GetNumberOfTuples() > 0:
+                return int(arr.GetValue(0))
+
+        # --- Not found ---
+        return None
+
 
     def onMouseMoved(self, observer, eventid):
         # if markup node doesn't exist do nothing
@@ -1408,6 +1440,10 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if not displacementVolume:
             self.labelMarkupNode.SetNthControlPointLabel(0, "No volume")
             return
+        
+
+        # get flag
+        flag = self.getBrainShiftFlag(displacementVolume)
 
         # convert RAS to IJK
         rasToIjk = vtk.vtkMatrix4x4()
@@ -1423,7 +1459,19 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             return
 
         value = displacementVolume.GetImageData().GetScalarComponentAsDouble(*ijk, 0)
-        label = f"{value:.3f} mm"
+
+
+        # apply flag logic
+        if flag == 0:
+            # displacement magnitude (mm)
+            label = f"{value:.3f} mm"
+        elif flag == 1:
+            # jacobian -> percent difference from 1
+            percent_diff = (value - 1.0) * 100.0
+            label = f"{percent_diff:+.1f}%"
+        else:
+            label = f"{value:.3f}"
+
         self.labelMarkupNode.SetNthControlPointLabel(0, label)
 
 
@@ -1984,6 +2032,17 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
             referenceVolume.GetName() + "_displacementMagnitude"
         )
         sitkUtils.PushVolumeToSlicer(dispMag, outputVolume)
+
+        # add flag
+        img = outputVolume.GetImageData()
+        flagArray = vtk.vtkIntArray()
+        flagArray.SetName("BrainShiftFlag")
+        flagArray.SetNumberOfValues(1)
+        flagArray.SetValue(0, 0)  # 0 = displacement
+        img.GetFieldData().AddArray(flagArray)
+        outputVolume.Modified()
+
+
         # Ensure display node exists
         if not outputVolume.GetDisplayNode():
             #slicer.modules.volumes.logic().CreateDefaultDisplayNodes(outputVolume)
@@ -2051,6 +2110,15 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
             referenceVolume.GetName() + "_jacobianMagnitude"
         )
         sitkUtils.PushVolumeToSlicer(jacDet, targetNode=outputVolume)
+
+        # add flag
+        img = outputVolume.GetImageData()
+        flagArray = vtk.vtkIntArray()
+        flagArray.SetName("BrainShiftFlag")
+        flagArray.SetNumberOfValues(1)
+        flagArray.SetValue(0, 1)  # 1 = Jacoban
+        img.GetFieldData().AddArray(flagArray)
+        outputVolume.Modified()
 
         # Step 7: Display setup
         if not outputVolume.GetDisplayNode():
