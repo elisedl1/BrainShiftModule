@@ -414,7 +414,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Get or create the single shared label node
         labelNodeName = "BrainShiftModule_MouseValueLabel"
         node = slicer.mrmlScene.GetFirstNodeByName(labelNodeName)
-        node.GetDisplayNode().SetGlyphScale(8)
+        # node.GetDisplayNode().SetGlyphScale(8)
         
         if not node:
             node = slicer.mrmlScene.AddNewNodeByClass(
@@ -817,7 +817,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     displayNode.SetInteractionHandleScale(0.0)
 
             else:
-                print("don't show node", node.GetName()) #stores typed in landmark name
+                # print("don't show node", node.GetName()) #stores typed in landmark name
                 #displayNode = node.GetDisplayNode()
                 displayNode.SetVisibility(False)
                 displayNode.SetVisibility2D(False)
@@ -1276,7 +1276,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
         flag = self.getBrainShiftFlag(selectedVolume)
-        print("BrainShiftFlag =", flag)
+        # print("BrainShiftFlag =", flag)
 
         if not selectedVolume or not selectedVolume.GetDisplayNode():
             slicer.util.errorDisplay("Please select a volume before loading.")
@@ -1306,8 +1306,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         selectedVolume.AddAndObserveDisplayNodeID(internalDisplayNode.GetID())
 
         numDisplayNodes = selectedVolume.GetNumberOfDisplayNodes()      
-        print(f"Number of display nodes: {numDisplayNodes}")
-        print("Update 1")
+        # print(f"Number of display nodes: {numDisplayNodes}")
+        # print("Update 1")
         # change to selected color
         colorNode = self.ui.colorMapSelector.currentNode()
         if colorNode:
@@ -1408,8 +1408,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             minWindow = displayNode.GetWindowLevelMin()
             maxWindow = displayNode.GetWindowLevelMax()
             
-            print("Current Window:", window)
-            print("Window Range:", minWindow, "to", maxWindow)
+            # print("Current Window:", window)
+            # print("Window Range:", minWindow, "to", maxWindow)
             
             # Set up the slider
             self.ui.colourWindowSlider.singleStep = step
@@ -1426,8 +1426,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             minLevel = displayNode.GetWindowLevelMin()
             maxLevel = displayNode.GetWindowLevelMax()
 
-            print("Current Level:", level)
-            print("Level Range:", minLevel, "to", maxLevel)
+            # print("Current Level:", level)
+            # print("Level Range:", minLevel, "to", maxLevel)
 
             # Set up the slider
             
@@ -1561,7 +1561,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             disp.SetGlyphScale(8) 
 
         if enabled:
-            print("enabled")
+            # print("enabled")
             
             # make mouse cursor invisible
             for sliceName in slicer.app.layoutManager().sliceViewNames():
