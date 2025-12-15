@@ -986,6 +986,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Get or create the single shared label node
         labelNodeName = "BrainShiftModule_MouseValueLabel"
         node = slicer.mrmlScene.GetFirstNodeByName(labelNodeName)
+        # node.GetDisplayNode().SetGlyphScale(8)
         
         if not node:
             node = slicer.mrmlScene.AddNewNodeByClass(
@@ -1003,7 +1004,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             node.GetDisplayNode().GetTextProperty().SetColor(0.0, 0.0, 0.0)
         
         # Store reference on volume
-        volumeNode.SetAttribute("BrainShiftModule_LabelNodeID", node.GetID())
+        # volumeNode.SetAttribute("BrainShiftModule_LabelNodeID", node.GetID())
         
         return node
         
@@ -1213,8 +1214,32 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         vizLayout.addRow("Colour Level (brightness):", levelLayout)
 
+
+
+        # MARKUP TEXT SIZE
+        markupTextSizeLayout = qt.QVBoxLayout()
+        markupTextSizeLayout.setSpacing(5)
+        #vizLayout.addRow("Colour Window:", self.ui.colourWindowSlider)
+        colourmarkupTextSizeSliderLayout = qt.QHBoxLayout()
+        colourmarkupTextSizeSliderLayout.addWidget(self.ui.markupTextSizeSlider)
+        markupTextSizeLayout.addLayout(colourmarkupTextSizeSliderLayout)
+        vizLayout.addRow("Text size :", markupTextSizeLayout)
+
+        # MARKUP SIZE
+        # markupSizeSlider
+        markupSizeLayout = qt.QVBoxLayout()
+        markupSizeLayout.setSpacing(5)
+        colourmarkupSizeSliderLayout = qt.QHBoxLayout()
+        colourmarkupSizeSliderLayout.addWidget(self.ui.markupSizeSlider)
+        markupSizeLayout.addLayout(colourmarkupSizeSliderLayout)
+        vizLayout.addRow("Cursor size :", markupSizeLayout)
+
+
         # Add stretch at the end
         self.layout.addStretch(1)
+
+
+        
 
 
         
@@ -1360,7 +1385,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     displayNode.SetInteractionHandleScale(0.0)
 
             else:
-                print("don't show node", node.GetName()) #stores typed in landmark name
+                # print("don't show node", node.GetName()) #stores typed in landmark name
                 #displayNode = node.GetDisplayNode()
                 displayNode.SetVisibility(False)
                 displayNode.SetVisibility2D(False)
@@ -1811,7 +1836,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
         flag = self.getBrainShiftFlag(selectedVolume)
-        print("BrainShiftFlag =", flag) #1 for mag, 0 for jacobian
+        # print("BrainShiftFlag =", flag)
 
         if not selectedVolume or not selectedVolume.GetDisplayNode():
             slicer.util.errorDisplay("Please select a volume before loading.")
@@ -1827,16 +1852,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #DYNAMICLALY SET THE LABEL MARKUP
         self.labelMarkupNode = self.getOrCreateLabelNodeForCurrentVolume()
 
-        #self.logic.showNonZeroWireframe(foregroundVolume=usVolume, state=state, reload=True)
-        
-        # slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(selectedVolume)    
 
-
-        # visualize it
-        # slicer.util.setSliceViewerLayers(
-        #     background=backgroundVolume,
-        #     foreground=selectedVolume
-        # )
         
         self.onLoadExpertLabelsClicked()
 
@@ -1844,28 +1860,15 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         persistentDisplayNode = selectedVolume.GetDisplayNode()
 
-        
-    
-        # newDisplayNode = slicer.mrmlScene.AddNewNodeByClass(persistentDisplayNode.GetClassName())
-        # newDisplayNode.Copy(persistentDisplayNode)
-        # #newDisplayNode = originalDisplayNode
-
-        # Attach the new display node to the same volume
-        #selectedVolume.RemoveAllDisplayNodeIDs()
-
         internalDisplayNode = slicer.mrmlScene.AddNewNodeByClass(persistentDisplayNode.GetClassName())
 
         #internalDisplayNode.Copy(persistentDisplayNode)
         internalDisplayNode = persistentDisplayNode
         selectedVolume.AddAndObserveDisplayNodeID(internalDisplayNode.GetID())
 
-        #persistentDisplayNode.AddAndObserveDisplayNodeID(newDisplayNode.GetID())
-        # print(selectedVolume.GetDisplayNode())
-        # print(selectedVolume.GetClassName())
-
         numDisplayNodes = selectedVolume.GetNumberOfDisplayNodes()      
-        print(f"Number of display nodes: {numDisplayNodes}")
-        print("Update 1")
+        # print(f"Number of display nodes: {numDisplayNodes}")
+        # print("Update 1")
         # change to selected color
         
         if not flag: #
@@ -1884,12 +1887,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             internalDisplayNode.SetAndObserveColorNodeID(colorNode.GetID())
             internalDisplayNode.Modified()
-
-            #self.diagnose_colormap_application(selectedVolume)
-
-            # displayNode.SetAndObserveColorNodeID(colorNode.GetID())
-            # displayNode.Modified() #this line is directly modifying the volume - problem if incorrect volume is loaded in
-
+          
         normalizedValue = self.ui.opacitySlider.value / 100
         internalDisplayNode.SetOpacity(normalizedValue)
         
@@ -1901,16 +1899,41 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             sliceComposite.SetBackgroundVolumeID(backgroundVolume.GetID())  # your US/reference
             sliceComposite.SetForegroundVolumeID(selectedVolume.GetID())    # displacement field
             sliceComposite.SetForegroundOpacity(normalizedValue)
-            # scalarBar = slicer.app.layoutManager().sliceWidget(sliceName).GetForegroundScalarBarActor()
-            # scalarBar.SetTitle("Displacement magnitude")
-            # scalarBar.SetNumberOfLabels(5)
 
-        #slicer.util.setSliceViewerLayers(foregroundOpacity=normalizedValue)
-
-        #--- Automatically turn on visualization when loading
         self.ui.enableDisplacementVisualizationCheckbox.setChecked(True)
         
         self.ui.enableHoverDisplayCheckbox.setChecked(True)
+
+        # # # remove title of volume node appearing on screen
+        # displayNode = selectedVolume.GetDisplayNode()
+        # if displayNode:
+        #     colorLegendNodes = slicer.mrmlScene.GetNodesByClass("vtkMRMLColorLegendDisplayNode")
+        #     for i in range(colorLegendNodes.GetNumberOfItems()):
+        #         legendNode = colorLegendNodes.GetItemAsObject(i)
+        #         if legendNode.GetNodeReferenceID("primaryDisplay") == displayNode.GetID():
+        #             legendNode.SetTitleText(" ")
+        #             legendNode.SetVisibility(True)  # ensure the legend is still visible
+
+
+        # change legend to be color name instead of value if jacobian
+        displayNode = selectedVolume.GetDisplayNode()
+        if displayNode:
+            colorLegendNodes = slicer.mrmlScene.GetNodesByClass("vtkMRMLColorLegendDisplayNode")
+            for i in range(colorLegendNodes.GetNumberOfItems()):
+                legendNode = colorLegendNodes.GetItemAsObject(i)
+                if legendNode.GetNodeReferenceID("primaryDisplay") == displayNode.GetID():
+                    legendNode.SetTitleText(" ")  # clear title for both jacobian and displacement
+
+                    if flag == 0:  # displacement
+                        legendNode.SetUseColorNamesForLabels(False)  # show numeric values
+                        legendNode.SetVisibility(True)
+                    elif flag == 1:  # jacobian
+                        legendNode.SetUseColorNamesForLabels(True)   # show color names
+                        legendNode.SetVisibility(True)  
+                    else: # other type of node
+                        legendNode.SetUseColorNamesForLabels(False)
+                        legendNode.SetVisibility(True)
+        
 
 
         # set max and min of threshold slider
@@ -1958,8 +1981,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             minWindow = displayNode.GetWindowLevelMin()
             maxWindow = displayNode.GetWindowLevelMax()
             
-            print("Current Window:", window)
-            print("Window Range:", minWindow, "to", maxWindow)
+            # print("Current Window:", window)
+            # print("Window Range:", minWindow, "to", maxWindow)
             
             # Set up the slider
             self.ui.colourWindowSlider.singleStep = step
@@ -1976,10 +1999,11 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             minLevel = displayNode.GetWindowLevelMin()
             maxLevel = displayNode.GetWindowLevelMax()
 
-            print("Current Level:", level)
-            print("Level Range:", minLevel, "to", maxLevel)
+            # print("Current Level:", level)
+            # print("Level Range:", minLevel, "to", maxLevel)
 
             # Set up the slider
+            
             self.ui.colourLevelSlider.singleStep = step
             self.ui.colourLevelSlider.minimum = minLevel
             self.ui.colourLevelSlider.maximum = maxLevel
@@ -1987,6 +2011,9 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             # Connect slider to update function
             self.ui.colourLevelSlider.valueChanged.connect(self.onLevelChanged)
+
+
+            
 
 
 
@@ -2060,9 +2087,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             return
         
 
-        # get flag
-        flag = self.getBrainShiftFlag(displacementVolume)
-
         # convert RAS to IJK
         rasToIjk = vtk.vtkMatrix4x4()
         displacementVolume.GetRASToIJKMatrix(rasToIjk)
@@ -2073,34 +2097,50 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         dims = displacementVolume.GetImageData().GetDimensions()
         if any(i < 0 or i >= d for i, d in zip(ijk, dims)):
-            self.labelMarkupNode.SetNthControlPointLabel(0, "Out of bounds")
+            # self.labelMarkupNode.SetNthControlPointLabel(0, "Out of bounds")
+            self.labelMarkupNode.SetNthControlPointLabel(0, "")
             return
 
         value = displacementVolume.GetImageData().GetScalarComponentAsDouble(*ijk, 0)
 
+        # get flag
+        flag = self.getBrainShiftFlag(displacementVolume)
 
         # apply flag logic
         if flag == 0:
             # displacement magnitude (mm)
-            label = f"{value:.3f} mm"
+            label = f"{value:.2f} mm"
         elif flag == 1:
             # jacobian -> percent difference from 1
             percent_diff = (value - 1.0) * 100.0
             label = f"{percent_diff:+.1f}%"
         else:
-            label = f"{value:.3f}"
+            label = f"{value:.2f}"
 
         self.labelMarkupNode.SetNthControlPointLabel(0, label)
 
 
     def onToggleHoverDisplay(self, enabled: bool) -> None:
-        print("on Toggle Hover Display")
+        # print("on Toggle Hover Display")
+        
 
         self.labelMarkupNode = self.getOrCreateLabelNodeForCurrentVolume()
         disp = self.labelMarkupNode.GetDisplayNode()
 
+        # set it to be CrossDot2D
+        if disp:
+            # Set default node type
+            disp.SetGlyphType(3)  # if you want to change go look at markups -> display -> advanced -> glyphtype and choose number in list
+            disp.SetGlyphScale(8) 
+
         if enabled:
-            print("enabled")
+            # print("enabled")
+            
+            # make mouse cursor invisible
+            for sliceName in slicer.app.layoutManager().sliceViewNames():
+                sliceWidget = slicer.app.layoutManager().sliceWidget(sliceName)
+                sliceView = sliceWidget.sliceView()
+                sliceView.setViewCursor(qt.Qt.BlankCursor)
 
             # FORCE all relevant visibilities ON
             self.labelMarkupNode.SetDisplayVisibility(True)       # main visibility toggle
@@ -2108,13 +2148,35 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             disp.SetVisibility2D(True)
             disp.SetVisibility3D(False)                           # i want 2D only
             disp.SetPointLabelsVisibility(True)                   # show text
-            disp.SetTextScale(3.0)                                # ensure label isn't scaled to zero
+            disp.SetTextScale(4.5)                                # initial label size
+
+            # connect marksup size toggle
+            self.ui.markupSizeSlider.setMinimum(50)     
+            self.ui.markupSizeSlider.setMaximum(200)   
+            self.ui.markupSizeSlider.setValue(int(disp.GetGlyphScale() * 10))  
+            self.ui.markupSizeSlider.setSingleStep(1)
+            self.ui.markupSizeSlider.valueChanged.connect(self.onMarkupNodeSizeChanged)
+
+            # setup slider to control text size
+            self.ui.markupTextSizeSlider.setMinimum(10)  # corresponds to 1.0
+            self.ui.markupTextSizeSlider.setMaximum(100) # corresponds to 10.0
+            self.ui.markupTextSizeSlider.setValue(int(disp.GetTextScale() * 10))  # match current label size
+            self.ui.markupTextSizeSlider.setSingleStep(1)
+            self.ui.markupTextSizeSlider.valueChanged.connect(self.onMarkupTextChanged)
+
+            if self.crosshairObserverTag is None:
+                self.crosshairObserverTag = self.crosshairNode.AddObserver(
+                    slicer.vtkMRMLCrosshairNode.CursorPositionModifiedEvent,
+                    self.onMouseMoved
+        )
 
             if self.crosshairObserverTag is None:
                 self.crosshairObserverTag = self.crosshairNode.AddObserver(
                     slicer.vtkMRMLCrosshairNode.CursorPositionModifiedEvent,
                     self.onMouseMoved
                 )
+
+            
 
         else:
             # FORCE everything off
@@ -2128,39 +2190,35 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.crosshairNode.RemoveObserver(self.crosshairObserverTag)
                 self.crosshairObserverTag = None
 
-    # def onToggleDisplacementVisualizationDisplay(self, enabled: bool) -> None:
-    #     print("on Displacement Visualization Toggle")
+            # restore cursor to default
+            for sliceName in slicer.app.layoutManager().sliceViewNames():
+                sliceWidget = slicer.app.layoutManager().sliceWidget(sliceName)
+                sliceView = sliceWidget.sliceView()
+                sliceView.setViewCursor(qt.Qt.ArrowCursor)
+    
 
-    #     self.volumeNode = self.ui.loadedTransformVolume.currentNode()
-    #     displayNode = self.volumeNode.GetDisplayNode()
+    def onMarkupNodeSizeChanged(self, value):
+        """Adjust the glyph size of the labelMarkupNode."""
+        if hasattr(self, "labelMarkupNode") and self.labelMarkupNode:
+            disp = self.labelMarkupNode.GetDisplayNode()
+            if disp:
+                disp.SetGlyphScale(value / 10.0)
 
-    #     if enabled:
-    #         print("enabled")
 
-    #         # FORCE all relevant visibilities ON
-    #         self.volumeNode.SetDisplayVisibility(True)       # main visibility toggle
-    #         displayNode.SetVisibility(True)                              # fallback
-    #         displayNode.SetVisibility2D(True)
-    #         displayNode.SetVisibility3D(True)                           # i want 2D only
-    #         #displayNode.SetPointLabelsVisibility(True)                   # show text
-    #         #displayNode.SetTextScale(3.0)                                # ensure label isn't scaled to zero
+    def onMarkupTextChanged(self, value):
+        # Adjust the size of the markup labels based on slider value
+        if hasattr(self, "labelMarkupNode") and self.labelMarkupNode:
+            disp = self.labelMarkupNode.GetDisplayNode()
+            if disp:
+                # Scale slider value down by 10 to allow float sizes like 3.5
+                disp.SetTextScale(value / 10.0)
 
-        
 
-    #     else:
-    #         # FORCE everything off
-    #         self.volumeNode.SetDisplayVisibility(False)
-    #         displayNode.SetVisibility(False)
-    #         displayNode.SetVisibility2D(False)
-    #         displayNode.SetVisibility3D(False)
-            #displayNode.SetPointLabelsVisibility(False)
 
-            # if self.crosshairObserverTag is not None:
-            #     self.crosshairNode.RemoveObserver(self.crosshairObserverTag)
-            #     self.crosshairObserverTag = None
+
 
     def onToggleDisplacementVisualizationDisplay(self, enabled: bool) -> None:
-        print("on Displacement Visualization Toggle")
+        # print("on Displacement Visualization Toggle")
 
         self.volumeNode = self.ui.loadedTransformVolume.currentNode()
         
@@ -2170,7 +2228,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         displayNode = self.volumeNode.GetDisplayNode()
 
         if enabled:
-            print("enabled")
+            # print("enabled")
             
             # Show in slice views by setting foreground opacity
             normalizedValue = self.ui.opacitySlider.value / 100
@@ -2184,7 +2242,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             displayNode.SetVisibility3D(False)  # Keep 3D off if you only want 2D
 
         else:
-            print("disabled")
+            # print("disabled")
             
             # Hide from slice views by setting foreground to None or opacity to 0
             for sliceName in slicer.app.layoutManager().sliceViewNames():
@@ -2347,7 +2405,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             slicer.util.errorDisplay("No name provided for second landmark file.")
             return None, None
 
-        print("Renamed to:", text1, text2)
+        # print("Renamed to:", text1, text2)
         return text1, text2
 
     # def getLandmarkLabel(self):
@@ -2623,7 +2681,7 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
 
        #imageData = refImage.GetImageData()
-        print("outputVolume image data: ", refImage)
+        # print("outputVolume image data: ", refImage)
         
         if refImage is None:
             raise Exception("Reference volume has no image data")
