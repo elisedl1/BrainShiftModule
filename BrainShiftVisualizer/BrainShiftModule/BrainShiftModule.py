@@ -2170,12 +2170,11 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onMouseMoved(self, observer, eventid):
         # if markup node doesn't exist do nothing
-        # if markup node doesn't exist do nothing
         #print("self.ui.loadedTransformVolume.currentNode()", self.ui.loadedTransformVolume.currentNode())
         #print("elf.ui.loadedTransformVolume.currentNode().GetDisplayNode())", self.ui.loadedTransformVolume.currentNode().GetDisplayNode())
         
         if not self.ui.loadedTransformVolume.currentNode() or not self.ui.loadedTransformVolume.currentNode().GetDisplayNode():
-            print("no volume")
+            #print("no volume")
             return
         
         # Check if labelMarkupNode exists and has a display node
