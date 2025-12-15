@@ -288,7 +288,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.vtkMRMLScene.NodeAddedEvent, self.onNodeChanged)
         self.addObserver(slicer.mrmlScene, slicer.vtkMRMLScene.NodeRemovedEvent, self.onNodeChanged)
 
-
+        
         # Buttons
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
 
@@ -304,7 +304,21 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.selectedLandmarks.setReadOnly(True)
         self.ui.landmarkEuclidianDistance.setReadOnly(True)
 
-        
+
+        # # If there's already a volume loaded, reset its color map to default
+        # if self.ui.loadedTransformVolume.currentNode():
+        #     volumeNode = self.ui.loadedTransformVolume.currentNode()
+        #     dispNode = volumeNode.GetDisplayNode()  # Gets the UNIQUE display node for this volume
+        #     if dispNode:
+        #         # Get the default color node by name
+        #         defaultColorNode = slicer.mrmlScene.GetFirstNodeByName(self.defaultColorNodeID)
+        #         if defaultColorNode:
+        #             # Set it on THIS volume's display node (won't affect other volumes)
+        #             dispNode.SetAndObserveColorNodeID(defaultColorNode.GetID())
+        #             # Update the selector to match
+        #             self.ui.colorMapSelector.setCurrentNode(defaultColorNode)
+        #             print(f"Reset color map to default: {defaultColorNode.GetName()}")
+
 
     import numpy as np
 
@@ -329,15 +343,76 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         return errorCallback
     
 
+    # def resetBuiltInColorNodes(self):
+    #     """Reset built-in color nodes to defaults"""
+    #     colorLogic = slicer.modules.colors.logic()
+    #     # This will reload all default color nodes
+    #     colorLogic.RemoveDefaultColorNodes()
+
+    #     colorLogic.AddDefaultColorNodes()
+
     def resetBuiltInColorNodes(self):
-        """Reset built-in color nodes to defaults"""
-        colorLogic = slicer.modules.colors.logic()
-        # This will reload all default color nodes
-        colorLogic.RemoveDefaultColorNodes()
-
-        colorLogic.AddDefaultColorNodes()
-
+        """Reset built-in color nodes to defaults while preserving existing volume color assignments"""
         
+        # Save current color node assignments
+        volumes = slicer.util.getNodesByClass('vtkMRMLScalarVolumeNode')
+        colorNodeNames = {}
+        for vol in volumes:
+            dispNode = vol.GetDisplayNode()
+            if dispNode:
+                colorNode = dispNode.GetColorNode()
+                if colorNode:
+                    colorNodeNames[vol.GetID()] = colorNode.GetName()
+        
+        # Reset color nodes
+        colorLogic = slicer.modules.colors.logic()
+        colorLogic.RemoveDefaultColorNodes()
+        colorLogic.AddDefaultColorNodes()
+        
+        # Restore color node assignments
+        for volID, colorName in colorNodeNames.items():
+            vol = slicer.mrmlScene.GetNodeByID(volID)
+            if vol:
+                dispNode = vol.GetDisplayNode()
+                if dispNode:
+                    colorNode = slicer.mrmlScene.GetFirstNodeByName(colorName)
+                    if colorNode:
+                        dispNode.SetAndObserveColorNodeID(colorNode.GetID())
+                    # else:
+                    #     print(f"Warning: Could not find color node '{colorName}', using default Grey")
+                    #     defaultColorNode = slicer.mrmlScene.GetFirstNodeByName("Grey")
+                    #     if defaultColorNode:
+                    #         dispNode.SetAndObserveColorNodeID(defaultColorNode.GetID())
+
+
+    # def resetBuiltInColorNodes(self):
+    #     """Reset built-in color nodes to defaults while preserving existing volume color assignments"""
+        
+    #     # Save current color node assignments
+    #     volumes = slicer.util.getNodesByClass('vtkMRMLScalarVolumeNode')
+    #     colorNodeNames = {}
+    #     for vol in volumes:
+    #         dispNode = vol.GetDisplayNode()
+    #         if dispNode:
+    #             colorNode = dispNode.GetColorNode()
+    #             if colorNode:
+    #                 colorNodeNames[vol.GetID()] = colorNode.GetName()
+        
+    #     # Reset color nodes
+    #     colorLogic = slicer.modules.colors.logic()
+    #     colorLogic.RemoveDefaultColorNodes()
+    #     colorLogic.AddDefaultColorNodes()
+        
+    #     # Restore color node assignments
+    #     for volID, colorName in colorNodeNames.items():
+    #         vol = slicer.mrmlScene.GetNodeByID(volID)
+    #         if vol:
+    #             dispNode = vol.GetDisplayNode()
+    #             if dispNode:
+    #                 colorNode = slicer.util.getNode(colorName)
+    #                 if colorNode:
+    #                     dispNode.SetAndObserveColorNodeID(colorNode.GetID())
+            
     def cleanupCorruptedColormaps(self, name_str, type_str):
         """
         Remove corrupted/empty color nodes and recreate them properly.
@@ -1011,8 +1086,11 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onTransformVolumeChanged(self):
         """Called whenever a different volume is selected in loadedTransformVolume"""
+       
         volumeNode = self.ui.loadedTransformVolume.currentNode()
-        
+        print(f"=== onTransformVolumeChanged called with node: {volumeNode}")
+        print(f"  - setup complete? {hasattr(self, 'logic')}")
+        print(f"  - labelMarkupNode exists? {hasattr(self, 'labelMarkupNode')}")
         if not volumeNode:
             return
         
