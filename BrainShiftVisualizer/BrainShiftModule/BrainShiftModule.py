@@ -1507,53 +1507,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     #     slicer.mrmlScene.AddNode(colorNode)
     #     return colorNode
    
-    # def createJacobianColorNode(self):
-    #     """
-    #     Create Jacobian colormap - only once, reuse if exists
-    #     """
-    #     existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
-        
-    #     if existingNode:
-    #         existingNode.SetAttribute("MyColourMaps", "1")
-    #         return existingNode
-
-    #     print("Creating new JacobianMap")
-        
-    #     colorNode = slicer.vtkMRMLColorTableNode()
-    #     colorNode.SetName("JacobianMap")
-    #     colorNode.SetAttribute("DisplayName", "Jacobian (Compression/Expansion)")
-    #     colorNode.SetAttribute("MyColourMaps", "1")
-    #     colorNode.SetTypeToUser()
-    #     colorNode.SetNumberOfColors(256)
-        
-    #     # Set colors first
-    #     for i in range(256):
-    #         val = i / 255.0
-    #         if val < 0.5:  # Below neutral (compression - blue)
-    #             intensity = val * 2.0
-    #             r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
-    #             #colorNode.SetColorName(i, "Contracting")
-
-    #         elif val > 0.5:  # Above neutral (expansion - red)
-    #             intensity = (val - 0.5) * 2.0
-    #             r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
-    #             #colorNode.SetColorName(i, "Expansion")
-
-    #         else:  # Neutral (white)
-    #             r, g, b = 1.0, 1.0, 1.0
-    #             #colorNode.SetColorName(i, "Neutral")
-
-    #         colorNode.SetColor(i, r, g, b, 1.0)
-    #         # Then set names separately
-            
-    #     colorNode.SetColorName(0, "Contracting")
-    #     colorNode.SetColorName(127, "Neutral")
-    #     colorNode.SetColorName(255, "Expanding")
-        
-    #     slicer.mrmlScene.AddNode(colorNode)
-    #     return colorNode
-
-
     def createJacobianColorNode(self):
         """
         Create Jacobian colormap - only once, reuse if exists
@@ -1561,13 +1514,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
         
         if existingNode:
-            # If reusing, clear all color names first
-            for i in range(existingNode.GetNumberOfColors()):
-                existingNode.SetColorName(i, "")  # Clear all names
-            # Then set only the 3 we want
-            existingNode.SetColorName(0, "Contracting")
-            existingNode.SetColorName(128, "Neutral")
-            existingNode.SetColorName(255, "Expanding")
             existingNode.SetAttribute("MyColourMaps", "1")
             return existingNode
 
@@ -1580,120 +1526,37 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         colorNode.SetTypeToUser()
         colorNode.SetNumberOfColors(256)
         
-        # Set colors WITHOUT setting any names
+        # Set colors first
         for i in range(256):
             val = i / 255.0
-            if val < 0.5:
+            if val < 0.5:  # Below neutral (compression - blue)
                 intensity = val * 2.0
                 r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
-            elif val > 0.5:
+                #colorNode.SetColorName(i, "Contracting")
+
+            elif val > 0.5:  # Above neutral (expansion - red)
                 intensity = (val - 0.5) * 2.0
                 r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
-            else:
+                #colorNode.SetColorName(i, "Expansion")
+
+            else:  # Neutral (white)
                 r, g, b = 1.0, 1.0, 1.0
-            
+                #colorNode.SetColorName(i, "Neutral")
+
+            #colorNode.SetColor(i, "")
             colorNode.SetColor(i, r, g, b, 1.0)
-            # DO NOT call SetColorName here
-        
-        # ONLY set names for exactly 3 indices - OUTSIDE the loop
-        colorNode.SetColorName(0, "Contracting")
-        colorNode.SetColorName(128, "Neutral")
-        colorNode.SetColorName(255, "Expanding")
-        
+            #THIS IS SO NECESSARY: 
+            colorNode.SetColorName(i, "")
+
+  
+        colorNode.SetColorName(64, "Contracting")
+        colorNode.SetColorName(191, "Expanding")
+                
         slicer.mrmlScene.AddNode(colorNode)
+
         return colorNode
 
-    # def createJacobianColorNode(self):
-    #     """
-    #     Create Jacobian colormap - only once, reuse if exists
-    #     """
-    #     existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
-        
-    #     if existingNode:
-    #         existingNode.SetAttribute("MyColourMaps", "1")
-    #         return existingNode
 
-    #     print("Creating new JacobianMap")
-        
-    #     colorNode = slicer.vtkMRMLColorTableNode()
-    #     colorNode.SetName("JacobianMap")
-    #     colorNode.SetAttribute("DisplayName", "Jacobian (Compression/Expansion)")
-    #     colorNode.SetAttribute("MyColourMaps", "1")
-    #     colorNode.SetTypeToUser()
-    #     colorNode.SetNumberOfColors(256)
-        
-    #     # Set colors first
-    #     for i in range(256):
-    #         val = i / 255.0
-    #         if val < 0.5:  # Below neutral (compression - blue)
-    #             intensity = val * 2.0
-    #             r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
-    #         elif val > 0.5:  # Above neutral (expansion - red)
-    #             intensity = (val - 0.5) * 2.0
-    #             r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
-    #         else:  # Neutral (white)
-    #             r, g, b = 1.0, 1.0, 1.0
-
-    #         colorNode.SetColor(i, r, g, b, 1.0)
-        
-    #     # Set names for ALL indices in each category so legend will find them
-    #     for i in range(128):  # All contracting indices
-    #         colorNode.SetColorName(i, "Contracting")
-        
-    #     colorNode.SetColorName(128, "Neutral")  # Neutral index
-        
-    #     for i in range(129, 256):  # All expanding indices
-    #         colorNode.SetColorName(i, "Expanding")
-
-    #     # colorNode.SetColorName(0, "Contracting")
-    #     # colorNode.SetColorName(1, "Neutral")
-    #     # colorNode.SetColorName(2, "Expanding")
-        
-        
-    #     slicer.mrmlScene.AddNode(colorNode)
-    #     return colorNode
-    
-    # def createJacobianColorNode(self):
-    #     """
-    #     Create Jacobian colormap with only 3 labeled positions
-    #     """
-    #     existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
-        
-    #     if existingNode:
-    #         existingNode.SetAttribute("MyColourMaps", "1")
-    #         return existingNode
-
-    #     print("Creating new JacobianMap")
-        
-    #     colorNode = slicer.vtkMRMLColorTableNode()
-    #     colorNode.SetName("JacobianMap")
-    #     colorNode.SetAttribute("MyColourMaps", "1")
-    #     colorNode.SetTypeToUser()
-    #     colorNode.SetNumberOfColors(256)
-        
-    #     # Set gradient colors
-    #     for i in range(256):
-    #         val = i / 255.0
-    #         if val < 0.5:
-    #             intensity = val * 2.0
-    #             r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
-    #         elif val > 0.5:
-    #             intensity = (val - 0.5) * 2.0
-    #             r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
-    #         else:
-    #             r, g, b = 1.0, 1.0, 1.0
-            
-    #         colorNode.SetColor(i, r, g, b, 1.0)
-    #         # Don't set any color names here
-        
-    #     # ONLY set names for 3 specific indices
-    #     colorNode.SetColorName(0, "Contracting")
-    #     colorNode.SetColorName(1, "Neutral")
-    #     colorNode.SetColorName(2, "Expanding")
-        
-    #     slicer.mrmlScene.AddNode(colorNode)
-    #     return colorNode
-    
 
     def createInputSection(self):
         section = ctk.ctkCollapsibleButton()
@@ -2364,33 +2227,21 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     
            
                     elif flag == 1:  # jacobian
-                        legendNode.SetTitleText("Jacobian Determinant\n(Contracting → Neutral → Expanding)")
-                        #legendNode.SetTitleSize(0.15, 0.5)
-                        #legendNode.SetTitleText("Jacobian Determinant")
-                        #legendNode.SetUseColorNamesForLabels(True)
                         legendNode.SetNumberOfLabels(3)  # Show only 3 labels
 
-                        legendNode.SetMaxNumberOfColors(256)  # Use full color range
-                        legendNode.SetLabelFormat("%.2f")  # Use numeric format instead
-                        #legendNode.SetSize([1,1])
-                        #Return to default size and position
-                        legendNode.SetSize(0.15, 0.5)  # (width, height) as fraction of viewport
-                        legendNode.SetPosition(0.85, 0.25)  # (x, y) position
+                        legendNode.SetTitleText("Jacobian Determinant")
+
+                        legendNode.SetUseColorNamesForLabels(True)  # Show only named colors
+                        legendNode.SetMaxNumberOfColors(256)          
+                        legendNode.SetSize(0.2, 0.5)
+                        legendNode.SetPosition(0.85, 0.25)
                         
                         titleProperty = legendNode.GetTitleTextProperty()
-                        titleProperty.SetFontSize(12)  # Default is usually 12, try 10 or 8 for smaller
-                        #titleProperty.SetFontFamilyToArial()
-                        #titleProperty.SetBold(False)
-                        
-                        #legendNode.SetNumberOfLabels(0)
-                        #print([method for method in dir(legendNode) if 'label' in method.lower()])
+                        titleProperty.SetFontSize(12)
 
-                        # Explicitly set which indices to use for labels
-                        #legendNode.SetLabelFormat("%s")  # Use string format for names
                         
-                        #displayNode.Modified()
-                        #legendNode.Modified()
                         legendNode.SetVisibility(True)
+                        
 
 
                     else: # other type of node
