@@ -199,6 +199,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.enableVTKErrorTracking()
 
         self.cleanupDuplicateColorNodes("JacobianMap")
+        self.removeAllNamedNode("JacobianMap")
 
         self.resetBuiltInColorNodes()
         #self.resetAllColorNodes()
@@ -1091,9 +1092,9 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """Called whenever a different volume is selected in loadedTransformVolume"""
        
         volumeNode = self.ui.loadedTransformVolume.currentNode()
-        print(f"=== onTransformVolumeChanged called with node: {volumeNode}")
-        print(f"  - setup complete? {hasattr(self, 'logic')}")
-        print(f"  - labelMarkupNode exists? {hasattr(self, 'labelMarkupNode')}")
+        # print(f"=== onTransformVolumeChanged called with node: {volumeNode}")
+        # print(f"  - setup complete? {hasattr(self, 'logic')}")
+        # print(f"  - labelMarkupNode exists? {hasattr(self, 'labelMarkupNode')}")
         if not volumeNode:
             return
         
@@ -1432,8 +1433,80 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             slicer.mrmlScene.RemoveNode(node)
         
         return first_node
+    
+    def removeAllNamedNode(self, nodeName):
+            
+        """
+        Remove all but the first instance of a color node
+        """
+        allNodes = slicer.mrmlScene.GetNodesByName(nodeName)
+        allNodes.InitTraversal()
+        
+        nodes_to_remove = []
+        first_node = None
+        
+        for i in range(allNodes.GetNumberOfItems()):
+            node = allNodes.GetNextItemAsObject()
+            nodes_to_remove.append(node)
+            print(f"Will remove duplicate {nodeName} (ID: {node.GetID()})")
+        
+        # Remove duplicates
+        for node in nodes_to_remove:
+            slicer.mrmlScene.RemoveNode(node)
+        
+        #return first_node
 
     
+    # def createJacobianColorNode(self):
+    #     """
+    #     Create Jacobian colormap - only once, reuse if exists
+    #     """
+    #     existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
+        
+    #     if existingNode:
+    #         # Don't remove it! Just return the existing one
+    #         #print("JacobianMap already exists, reusing")
+    #         existingNode.SetAttribute("MyColourMaps", "1")  # Ensure attribute is set
+    #         return existingNode
+
+    #     # Only create if it doesn't exist
+    #     print("Creating new JacobianMap")
+        
+    #     # Use ColorTableNode
+    #     colorNode = slicer.vtkMRMLColorTableNode()
+    #     colorNode.SetName("JacobianMap")
+    #     colorNode.SetAttribute("DisplayName", "Jacobian (Compression/Expansion)")
+    #     colorNode.SetAttribute("MyColourMaps", "1")
+    #     colorNode.SetTypeToUser()
+    #     colorNode.SetNumberOfColors(256)
+        
+    #     # Manually set colors in the table
+    #     for i in range(256):
+    #         val = i / 255.0
+    #         if val < 0.5:  # Below neutral (compression - blue)
+    #             intensity = val * 2.0
+    #             r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
+    #         elif val > 0.5:  # Above neutral (expansion - red)
+    #             intensity = (val - 0.5) * 2.0
+    #             r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
+    #         else:  # Neutral (white)
+    #             r, g, b = 1.0, 1.0, 1.0
+            
+    #         # c##olorNode.SetColor(i, r, g, b, 1.0)
+
+    #         # Set a name for EVERY color, not just 0, 128, 255
+    #         if i == 0:
+    #             colorNode.SetColor(i, r, g, b, 1.0, "Contracting")
+    #         elif i == 128:
+    #             colorNode.SetColor(i, r, g, b, 1.0, "Neutral (1.0)")
+    #         elif i == 255:
+    #             colorNode.SetColor(i, r, g, b, 1.0, "Expanding")
+    #         else:
+    #             colorNode.SetColor(i, r, g, b, 1.0)
+            
+    #     slicer.mrmlScene.AddNode(colorNode)
+    #     return colorNode
+   
     def createJacobianColorNode(self):
         """
         Create Jacobian colormap - only once, reuse if exists
@@ -1441,15 +1514,11 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
         
         if existingNode:
-            # Don't remove it! Just return the existing one
-            #print("JacobianMap already exists, reusing")
-            existingNode.SetAttribute("MyColourMaps", "1")  # Ensure attribute is set
+            existingNode.SetAttribute("MyColourMaps", "1")
             return existingNode
 
-        # Only create if it doesn't exist
         print("Creating new JacobianMap")
         
-        # Use ColorTableNode
         colorNode = slicer.vtkMRMLColorTableNode()
         colorNode.SetName("JacobianMap")
         colorNode.SetAttribute("DisplayName", "Jacobian (Compression/Expansion)")
@@ -1457,23 +1526,37 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         colorNode.SetTypeToUser()
         colorNode.SetNumberOfColors(256)
         
-        # Manually set colors in the table
+        # Set colors first
         for i in range(256):
             val = i / 255.0
             if val < 0.5:  # Below neutral (compression - blue)
                 intensity = val * 2.0
                 r, g, b = 0.0, 0.0, 0.6 + intensity * 0.4
+                #colorNode.SetColorName(i, "Contracting")
+
             elif val > 0.5:  # Above neutral (expansion - red)
                 intensity = (val - 0.5) * 2.0
                 r, g, b = 0.6 + intensity * 0.4, 0.0, 0.0
+                #colorNode.SetColorName(i, "Expansion")
+
             else:  # Neutral (white)
                 r, g, b = 1.0, 1.0, 1.0
-            
+                #colorNode.SetColorName(i, "Neutral")
+
+            #colorNode.SetColor(i, "")
             colorNode.SetColor(i, r, g, b, 1.0)
-        
+            #THIS IS SO NECESSARY: 
+            colorNode.SetColorName(i, "")
+
+  
+        colorNode.SetColorName(64, "Contracting")
+        colorNode.SetColorName(191, "Expanding")
+                
         slicer.mrmlScene.AddNode(colorNode)
+
         return colorNode
-   
+
+
 
     def createInputSection(self):
         section = ctk.ctkCollapsibleButton()
@@ -2136,11 +2219,31 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     legendNode.SetTitleText(" ")  # clear title for both jacobian and displacement
 
                     if flag == 0:  # displacement
+                        legendNode.SetTitleText("Displacement (mm)")
                         legendNode.SetUseColorNamesForLabels(False)  # show numeric values
                         legendNode.SetVisibility(True)
+                        legendNode.SetSize(0.15, 0.5)  # (width, height) as fraction of viewport
+                        legendNode.SetPosition(0.85, 0.25)  # (x, y) position
+    
+           
                     elif flag == 1:  # jacobian
-                        legendNode.SetUseColorNamesForLabels(True)   # show color names
-                        legendNode.SetVisibility(True)  
+                        legendNode.SetNumberOfLabels(3)  # Show only 3 labels
+
+                        legendNode.SetTitleText("Jacobian Determinant")
+
+                        legendNode.SetUseColorNamesForLabels(True)  # Show only named colors
+                        legendNode.SetMaxNumberOfColors(256)          
+                        legendNode.SetSize(0.2, 0.5)
+                        legendNode.SetPosition(0.85, 0.25)
+                        
+                        titleProperty = legendNode.GetTitleTextProperty()
+                        titleProperty.SetFontSize(12)
+
+                        
+                        legendNode.SetVisibility(True)
+                        
+
+
                     else: # other type of node
                         legendNode.SetUseColorNamesForLabels(False)
                         legendNode.SetVisibility(True)
