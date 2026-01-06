@@ -186,14 +186,22 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.loadedTransformVolume.nodeTypes = ["vtkMRMLScalarVolumeNode"]
         self.ui.loadedTransformVolume.setMRMLScene(slicer.mrmlScene)
 
-        #Step 3: has crosshair in it to check if moving but seems wrong
-        self.ui.loadedTransformVolume.connect("currentNodeChanged(vtkMRMLNode*)", 
-                                          self.onTransformVolumeChanged)
-        # connect
-        #Step 4: Has the label crosshair to check if moving but seems wrong
-        self.ui.loadDisplacementVolumeButton.connect("clicked(bool)", self.onLoadDisplacementVolume)
 
-        # Color selector
+        #Step 3: has crosshair in it to check if moving but seems wrong
+        # self.ui.loadedTransformVolume.connect("currentNodeChanged(vtkMRMLNode*)", 
+        #                                   self.onTransformVolumeChanged)
+        # connect
+        # self.ui.loadDisplacementVolumeButton.connect("clicked(bool)", self.onLoadDisplacementVolume)
+
+        # new displacement and jacobian button connections
+        self.ui.loadDisplacementButton.connect(
+            "clicked(bool)", lambda: self.onLoadDisplacementVolume(flag=0)
+        )
+
+        self.ui.loadJacobianButton.connect(
+            "clicked(bool)", lambda: self.onLoadDisplacementVolume(flag=1)
+        )
+
       
 
         self.enableVTKErrorTracking()
@@ -1197,6 +1205,13 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # === SECTION 2: PROCESSING ===
 
+        for b in [self.ui.loadDisplacementButton, self.ui.loadJacobianButton]:
+            b.setMinimumSize(180, 38)
+            font = b.font
+            font.setPointSize(11)
+            font.setBold(True)
+            b.setFont(font)
+
         processingGroup = qt.QGroupBox("Displacement Field Visualization")
         processingGroup.setStyleSheet("""
             QGroupBox {
@@ -1212,27 +1227,42 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             }
         """)
         self.layout.addWidget(processingGroup)
-
-        processingLayout = qt.QFormLayout(processingGroup)  # Use QFormLayout for consistency
+        processingLayout = qt.QFormLayout(processingGroup)
         processingLayout.setContentsMargins(20, 25, 20, 20)
         processingLayout.setSpacing(12)
         processingLayout.setVerticalSpacing(12)
         processingLayout.setLabelAlignment(qt.Qt.AlignRight | qt.Qt.AlignVCenter)
 
-        processingLayout.addRow("Displacement Field:", self.ui.loadedTransformVolume)
+        # Colour map row
         processingLayout.addRow("Colour Map:", self.ui.colorMapSelector)
-        
 
-        visualizeVolumeLayout = qt.QHBoxLayout()
-        visualizeVolumeLayout.addWidget(self.ui.enableDisplacementVisualizationCheckbox)
-        visualizeVolumeLayout.addWidget(self.ui.enableHoverDisplayCheckbox)
+        # Row 1: Load buttons (TOP)
+        loadButtonsLayout = qt.QHBoxLayout()
+        loadButtonsLayout.addWidget(self.ui.loadDisplacementButton)
+        loadButtonsLayout.addWidget(self.ui.loadJacobianButton)
+        loadButtonsLayout.addStretch(1)
 
-        # visualizeVolumeLayout.addSpacing(5)
-        visualizeVolumeLayout.addWidget(self.ui.loadDisplacementVolumeButton)  # Stretch factor
-        #landmarkLayout.setLabelAlignment(qt.Qt.AlignRight | qt.Qt.AlignVCenter)
+        # center load buttons
+        loadButtonsLayout = qt.QHBoxLayout()
+        loadButtonsLayout.addStretch(1)
+        loadButtonsLayout.addWidget(self.ui.loadDisplacementButton)
+        loadButtonsLayout.addSpacing(14)
+        loadButtonsLayout.addWidget(self.ui.loadJacobianButton)
+        loadButtonsLayout.addStretch(1)
 
-        processingLayout.addRow(" ", visualizeVolumeLayout)
-        
+        processingLayout.addRow(" ", loadButtonsLayout)
+
+        # Row 2: Checkboxes (BELOW)
+        checkboxLayout = qt.QHBoxLayout()
+        checkboxLayout.addWidget(self.ui.enableDisplacementVisualizationCheckbox)
+        checkboxLayout.addWidget(self.ui.enableHoverDisplayCheckbox)
+        checkboxLayout.addStretch(1)
+
+        processingLayout.addRow(" ", checkboxLayout)
+
+
+
+        processingLayout.addRow("", loadButtonsLayout)
         
 
         # === SECTION 3: LANDMARKS ===
@@ -2060,7 +2090,10 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.colorMapSelector.setCurrentNode(colorNode)
             
 
-            self.onLoadDisplacementVolume()
+            # self.onLoadDisplacementVolume()
+            self.ui.loadedTransformVolume.setCurrentNode(displacementVolume)
+            self.onLoadDisplacementVolume(flag=0)
+
 
 
             #if colorNode and dispDisplay:
@@ -2099,18 +2132,47 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
 
-    def onLoadDisplacementVolume(self) -> None:
+    def onLoadDisplacementVolume(self, flag:int) -> None:
 
         '''
         Runs when user selects the Load Volume button
         
         '''
 
-        #selectedVolume = self.ui.existingDisplacementVolumeSelector.currentNode()
+
+        self.currentVisualizationFlag = flag
+
+
+
+        # --- AUTO-SELECT THE VOLUME FROM SCENE ---
+        selectedVolume = None
+
+        # first try: get current node from combo box (if anything was there)
         selectedVolume = self.ui.loadedTransformVolume.currentNode()
 
+        # second: if nothing selected, find it by suffix
+        if not selectedVolume:
+            suffix = "_displacementMagnitude" if flag == 0 else "_jacobianMagnitude"
+            scene = slicer.mrmlScene
+            for i in range(scene.GetNumberOfNodesByClass("vtkMRMLScalarVolumeNode")):
+                node = scene.GetNthNodeByClass(i, "vtkMRMLScalarVolumeNode")
+                if node.GetName() and node.GetName().endswith(suffix):
+                    selectedVolume = node
+                    break
 
-        flag = self.getBrainShiftFlag(selectedVolume)
+            # sync with UI so all other code works
+            if selectedVolume:
+                self.ui.loadedTransformVolume.setCurrentNode(selectedVolume)
+
+        # --- nothing found? show error and return ---
+        if not selectedVolume or not selectedVolume.GetDisplayNode():
+            slicer.util.errorDisplay(
+                "No displacement/Jacobian volume found in scene."
+            )
+            return
+
+
+        # flag = self.getBrainShiftFlag(selectedVolume)
         # print("BrainShiftFlag =", flag)
 
         if not selectedVolume or not selectedVolume.GetDisplayNode():
@@ -2233,7 +2295,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     legendNode.SetVisibility(False)
 
                     if flag == 0:  # displacement
-                        legendNode.SetTitleText("Displacement (mm)")
+                        # legendNode.SetTitleText("Displacement (mm)")
                         legendNode.SetUseColorNamesForLabels(False)  # show numeric values
                         legendNode.SetVisibility(True)
                         legendNode.SetSize(0.15, 0.5)  # (width, height) as fraction of viewport
@@ -2338,14 +2400,13 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.colourLevelSlider.minimum = minLevel
             self.ui.colourLevelSlider.maximum = maxLevel
             self.ui.colourLevelSlider.value = level  # Set current level as default
+            self.ui.colourLevelSlider.setValue(1.0)
 
             # Connect slider to update function
             self.ui.colourLevelSlider.valueChanged.connect(self.onLevelChanged)
 
 
             
-
-
 
     def onWindowChanged(self, value):
         """Update the display node when slider changes"""
@@ -2452,7 +2513,9 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         value = displacementVolume.GetImageData().GetScalarComponentAsDouble(*ijk, 0)
 
         # get flag
-        flag = self.getBrainShiftFlag(displacementVolume)
+        # flag = self.getBrainShiftFlag(displacementVolume)
+        flag = getattr(self, "currentVisualizationFlag", 0)
+
 
         # apply flag logic
         if flag == 0:
