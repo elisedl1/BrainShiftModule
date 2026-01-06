@@ -367,6 +367,20 @@
      </property>
     </widget>
    </item>
+   <item row="28" column="1">
+    <widget class="QPushButton" name="loadDisplacementButton">
+     <property name="text">
+      <string>Load Displacement Magnitude</string>
+     </property>
+    </widget>
+   </item>
+   <item row="29" column="1">
+    <widget class="QPushButton" name="loadJacobianButton">
+     <property name="text">
+      <string>Load Jacobian</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
