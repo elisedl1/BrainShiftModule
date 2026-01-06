@@ -1448,7 +1448,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         for i in range(allNodes.GetNumberOfItems()):
             node = allNodes.GetNextItemAsObject()
             nodes_to_remove.append(node)
-            print(f"Will remove duplicate {nodeName} (ID: {node.GetID()})")
+            print(f"Remove duplicate {nodeName} (ID: {node.GetID()})")
         
         # Remove duplicates
         for node in nodes_to_remove:
@@ -1547,15 +1547,21 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             colorNode.SetColor(i, r, g, b, 1.0)
             #THIS IS SO NECESSARY: 
             colorNode.SetColorName(i, "")
+            #colorNode.SetColorName(i, f"Index_{i}")  # Temporarily name each one
+        colorNode.SetColorName(84, " Contracting")
+        colorNode.SetColorName(196, " Expanding")
 
-        colorNode.SetColorName(64, "Contracting")
-        colorNode.SetColorName(191, "Expanding")
+        slicer.mrmlScene.AddNode(colorNode)
+       
 
-        print(colorNode.GetColorName(0))
+      
+
         # colorNode.SetColorName(0, "Contracting")
         # colorNode.SetColorName(128, "Neutral")  
         # colorNode.SetColorName(255, "Expanding") 
-        slicer.mrmlScene.AddNode(colorNode)
+        
+        
+        print(colorNode.GetColorName(0))
 
         return colorNode
 
@@ -2141,10 +2147,15 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         currentColorNode = internalDisplayNode.GetColorNode()
         print("currentColorNode", currentColorNode)
+
+       
+        #print("currentColorNode", currentColorNode.GetColor())
+
         # print(f"Number of display nodes: {numDisplayNodes}")
         # print("Update 1")
         # change to selected color
-        
+
+
         #HERE!
         #if not currentColorNode:
         print(f"First time loading - auto-setting color map (flag={flag})")
@@ -2231,10 +2242,35 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
            
                     elif flag == 1:  # jacobian
 
-                        legendNode.SetTitleText("Jacobian Determinant")
+                        # colorNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
+    
+                        # if colorNode:
+                        #     # Make sure the display node is using this color node
+                        #     displayNode.SetAndObserveColorNodeID(colorNode.GetID())
+                            
+                        #     # Debug: check what names are set
+                        #     print(f"ColorNode name at 0: {colorNode.GetColorName(0)}")
+                        #     #print(f"ColorNode name at 127: {colorNode.GetColorName(127)}")
+                        #     print(f"ColorNode name at 255: {colorNode.GetColorName(255)}")
+                            
+                        #     # Check what the legend sees
+                        #     displayColorNode = displayNode.GetColorNode()
+                        #     print(f"Display node's color node: {displayColorNode.GetName() if displayColorNode else 'None'}")
+                        #     if displayColorNode:
+                        #         print(f"Display's colorNode name at 0: {displayColorNode.GetColorName(0)}")
+                        # for i in range(256):
+                        #     color = [0.0, 0.0, 0.0, 0.0]
+                        #     currentColorNode.GetColor(i, color)
+                        #     name = currentColorNode.GetColorName(i)
+                        #     print(f"Index {i}: RGB({color[0]:.3f}, {color[1]:.3f}, {color[2]:.3f}) - Name: '{name}'")
+
+       
+                        legendNode.SetNumberOfLabels(2)  # Show only 3 labels
 
                         legendNode.SetUseColorNamesForLabels(True)  # Show only named colors
-                        legendNode.SetNumberOfLabels(3)  # Show only 3 labels
+
+                        legendNode.SetTitleText("Jacobian Determinant")
+                        #print("legend get colour:",colorNode.GetColorName(0))
 
                         legendNode.SetMaxNumberOfColors(256)          
                         legendNode.SetSize(0.2, 0.5)
@@ -2245,7 +2281,31 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                         
                         legendNode.SetVisibility(True)
                         
+                        # Check how many labels it's actually showing
+                        numLabels = legendNode.GetNumberOfLabels()
+                        # _, _ , 0.902
+                       # _, _ , 0.890
+                      
+                        #print(f"Number of labels: {numLabels}")
+                        #print(f"ColorNode name at 255: {colorNode.GetColorName(255)}")
 
+                        #print(legendNode.GetLabelTextProperty()
+                        # minScalar, maxScalar = 0.0, 100.0
+
+                        # # For scalar value 0.2:
+                        # colorIndex_02 = int((0.2 - minScalar) / (maxScalar - minScalar) * 255)
+                        # print(f"Scalar 0.2 maps to color index: {colorIndex_02}")
+
+                        # # For scalar value 1.9:
+                        # colorIndex_19 = int((1.9 - minScalar) / (maxScalar - minScalar) * 255)
+                        # print(f"Scalar 1.9 maps to color index: {colorIndex_19}")
+
+
+                        # Check the name on the legend's color node
+                                          #for i in range(numLabels):
+
+                            # label = legendNode.LabelProperties(i)
+                            # print(f"Label {i}: {label}")
 
                     else: # other type of node
                         legendNode.SetUseColorNamesForLabels(False)
