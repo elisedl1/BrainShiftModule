@@ -24,6 +24,8 @@ import vtk.util.numpy_support
 import qt
 
 import re
+import os 
+import tempfile
 
 #
 # BrainShiftModule
@@ -2196,7 +2198,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             scene = slicer.mrmlScene
             for i in range(scene.GetNumberOfNodesByClass("vtkMRMLScalarVolumeNode")):
                 node = scene.GetNthNodeByClass(i, "vtkMRMLScalarVolumeNode")
-                if node.GetName() and node.GetName().endswith(suffix):
+                if node.GetName() and suffix in node.GetName():
                     selectedVolume = node
                     break
 
@@ -2204,16 +2206,13 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             if selectedVolume:
                 self.ui.loadedTransformVolume.setCurrentNode(selectedVolume)
 
-        # --- nothing found? show error and return ---
+        #  nothing found? show error and return
         if not selectedVolume or not selectedVolume.GetDisplayNode():
             slicer.util.errorDisplay(
                 "No displacement/Jacobian volume found in scene."
             )
             return
 
-
-        # flag = self.getBrainShiftFlag(selectedVolume)
-        # print("BrainShiftFlag =", flag)
 
         if not selectedVolume or not selectedVolume.GetDisplayNode():
             slicer.util.errorDisplay("Please select a volume before loading.")
@@ -3213,7 +3212,21 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
             
         
         # Convert MRML BSpline transform to ITK transform
-        itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+        # itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+
+        # Write computed transform to temporary .h5 file
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+            tmpPath = tmp.name
+
+        slicer.util.saveNode(transformNode, tmpPath)
+
+        # Read into SimpleITK
+        itkTx = sitk.ReadTransform(tmpPath)
+
+        # Clean up
+        os.remove(tmpPath)
+
+
 
         # Resample the transform into a displacement field on the reference grid
         dispField = sitk.TransformToDisplacementField(
@@ -3291,8 +3304,18 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
 
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
 
-        
-        itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+        # itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+            tmpPath = tmp.name
+
+        slicer.util.saveNode(transformNode, tmpPath)
+
+        # Read into SimpleITK
+        itkTx = sitk.ReadTransform(tmpPath)
+
+        # Clean up
+        os.remove(tmpPath)
 
         # Convert transform to displacement field in reference grid
         displacementField = sitk.TransformToDisplacementField(
