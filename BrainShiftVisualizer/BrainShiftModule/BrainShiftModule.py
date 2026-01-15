@@ -24,6 +24,8 @@ import vtk.util.numpy_support
 import qt
 
 import re
+import os 
+import tempfile
 
 #
 # BrainShiftModule
@@ -3210,12 +3212,20 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
             
         
         # Convert MRML BSpline transform to ITK transform
-        itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+        # itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
 
+        # Write computed transform to temporary .h5 file
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+            tmpPath = tmp.name
 
-        print("MRML class:", transformNode.GetClassName())
-        vtkTx = transformNode.GetTransformFromParent()
-        print("VTK class:", vtkTx.GetClassName())
+        slicer.util.saveNode(transformNode, tmpPath)
+
+        # Read into SimpleITK
+        itkTx = sitk.ReadTransform(tmpPath)
+
+        # Clean up
+        os.remove(tmpPath)
+
 
 
         # Resample the transform into a displacement field on the reference grid
@@ -3294,9 +3304,18 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
 
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
 
-        print(transformNode)
-        itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
-        print(itkTx)
+        # itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+            tmpPath = tmp.name
+
+        slicer.util.saveNode(transformNode, tmpPath)
+
+        # Read into SimpleITK
+        itkTx = sitk.ReadTransform(tmpPath)
+
+        # Clean up
+        os.remove(tmpPath)
 
         # Convert transform to displacement field in reference grid
         displacementField = sitk.TransformToDisplacementField(
