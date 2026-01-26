@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1507</width>
-    <height>916</height>
+    <width>1440</width>
+    <height>861</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -264,7 +264,7 @@
       <number>100</number>
      </property>
      <property name="value">
-      <number>50</number>
+      <number>30</number>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
