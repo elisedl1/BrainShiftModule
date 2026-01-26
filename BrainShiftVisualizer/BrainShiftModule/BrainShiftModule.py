@@ -2491,10 +2491,8 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                         legendNode.SetPosition(0.85, 0.25)
                         
                         titleProperty = legendNode.GetTitleTextProperty()
-                        titleProperty.SetFontSize(12)
+                        titleProperty.SetFontSize(12)                        
                         
-                        
-
 
                     else: # other type of node
                         legendNode.SetUseColorNamesForLabels(False)
