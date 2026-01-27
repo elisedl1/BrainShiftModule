@@ -2356,7 +2356,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 self.ui.resetWindowLevelButton.setEnabled(False)
 
                 
-            
             self.lastLoadedFlag = flag  # Update the last flag
         else:
             # Not first time for this flag type - use current selection
@@ -2435,7 +2434,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                         
                         # Set displacement settings
                         legendNode.SetSize(0.15, 0.5)
-                        legendNode.SetPosition(0.85, 0.25)
+                        legendNode.SetPosition(0.95, 0.25)
                         legendNode.SetVisibility(True)
     
            
@@ -2449,9 +2448,11 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                         legendNode.SetNumberOfLabels(2)
                         legendNode.SetMaxNumberOfColors(2)
                         
-                        legendNode.SetTitleText("Jacobian Determinant")
+                        #legendNode.SetTitleText("Jacobian Determinant")
+                        legendNode.SetTitleText("")
+
                         legendNode.SetSize(0.2, 0.5)
-                        legendNode.SetPosition(0.85, 0.25)
+                        legendNode.SetPosition(0.95, 0.25) #Normalized coordinates of position - first is (right, left) second param is up, down
                         
                         titleProperty = legendNode.GetTitleTextProperty()
                         titleProperty.SetFontSize(12)
@@ -2592,18 +2593,19 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             # Use threshold range for window/level
             window = thresholdMax - thresholdMin
             level = (thresholdMax + thresholdMin) / 2.0
+
         else:
             # Check if there's a color node with a defined range
             colorNode = displayNode.GetColorNode()
             if colorNode:
-                # Get the color transfer function range
-                colorRange = [0, 0]
-                colorNode.GetRange(colorRange)
+                # Try to get window/level from display node first
+                currentWindow = displayNode.GetWindow()
+                currentLevel = displayNode.GetLevel()
                 
-                if colorRange[0] != colorRange[1]:
-                    # Use color node range
-                    window = colorRange[1] - colorRange[0]
-                    level = (colorRange[1] + colorRange[0]) / 2.0
+                if currentWindow > 0:
+                    # Use existing window/level if valid
+                    window = currentWindow
+                    level = currentLevel
                 else:
                     # Fallback to full data range
                     window = dataMax - dataMin
@@ -2612,6 +2614,26 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 # No color node, use full data range
                 window = dataMax - dataMin
                 level = (dataMax + dataMin) / 2.0
+        # else:
+        #     # Check if there's a color node with a defined range
+        #     colorNode = displayNode.GetColorNode()
+        #     if colorNode:
+        #         # Get the color transfer function range
+        #         colorRange = [0, 0]
+        #         colorNode.GetRange(colorRange)
+                
+        #         if colorRange[0] != colorRange[1]:
+        #             # Use color node range
+        #             window = colorRange[1] - colorRange[0]
+        #             level = (colorRange[1] + colorRange[0]) / 2.0
+        #         else:
+        #             # Fallback to full data range
+        #             window = dataMax - dataMin
+        #             level = (dataMax + dataMin) / 2.0
+        #     else:
+        #         # No color node, use full data range
+        #         window = dataMax - dataMin
+        #         level = (dataMax + dataMin) / 2.0
         
         # **DIVERGING COLORMAP ADJUSTMENT**
         # Check if using a diverging colormap (e.g., "Diverging Blue/Red")
