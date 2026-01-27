@@ -2923,12 +2923,20 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.labelMarkupNode.SetNthControlPointLabel(0, "")
             return
 
-        value = displacementVolume.GetImageData().GetScalarComponentAsDouble(*ijk, 0)
+        # value = displacementVolume.GetImageData().GetScalarComponentAsDouble(*ijk, 0)
 
-        # get flag
-        # flag = self.getBrainShiftFlag(displacementVolume)
+        # # get flag
+        # # flag = self.getBrainShiftFlag(displacementVolume)
+        
         flag = getattr(self, "currentVisualizationFlag", 0)
+        scalarArray = displacementVolume.GetImageData().GetPointData().GetScalars()
+        
+        if not scalarArray:
+            self.labelMarkupNode.SetNthControlPointLabel(0, "No data")
+            return
 
+        flatIndex = ijk[0] + ijk[1] * dims[0] + ijk[2] * dims[0] * dims[1]
+        value = scalarArray.GetTuple1(flatIndex)
 
         # apply flag logic
         if flag == 0:
@@ -3597,6 +3605,15 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
         import sitkUtils
         import numpy as np
 
+        print(f"\n=== JACOBIAN COMPUTATION DEBUG ===")
+        print(f"Transform: {transformNode.GetName()} (ID: {transformNode.GetID()})")
+        print(f"Reference: {referenceVolume.GetName()}")
+        
+        refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
+        print(f"Reference spacing: {refImage.GetSpacing()}")
+        print(f"Reference size: {refImage.GetSize()}")
+        
+
         refImage = sitkUtils.PullVolumeFromSlicer(referenceVolume)
 
         # itkTx = sitk.ReadTransform(transformNode.GetStorageNode().GetFileName())
@@ -3621,10 +3638,20 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
             refImage.GetSpacing(),
             refImage.GetDirection()
         )
-
+        df_array = sitk.GetArrayFromImage(displacementField)
+        print(f"Displacement field range: [{df_array.min():.4f}, {df_array.max():.4f}]")
+    
         # Step 4: Compute Jacobian determinant
         jacDet = sitk.DisplacementFieldJacobianDeterminant(displacementField)
 
+        jac_array = sitk.GetArrayFromImage(jacDet)
+        print(f"Jacobian determinant range: [{jac_array.min():.4f}, {jac_array.max():.4f}]")
+        print(f"Jacobian determinant mean: {jac_array.mean():.4f}")
+        
+        center = tuple(s//2 for s in jac_array.shape)
+        print(f"Center voxel {center}: {jac_array[center]:.6f}")
+        print(f"=== END DEBUG ===\n")
+        
         # Step 5: Take magnitude (absolute value)
         #jacMagnitude = sitk.Abs(jacDet)
 
@@ -3654,8 +3681,8 @@ class BrainShiftModuleLogic(ScriptedLoadableModuleLogic):
         # displayNode.SetLevel(2.5)
         array = sitk.GetArrayFromImage(jacDet)
         minVal, maxVal = float(array.min()), float(array.max())
-        displayNode.SetWindow(maxVal - minVal)
-        displayNode.SetLevel((maxVal + minVal) / 2)
+        # displayNode.SetWindow(maxVal - minVal)
+        # displayNode.SetLevel((maxVal + minVal) / 2)
         
         existingNode = slicer.mrmlScene.GetFirstNodeByName("JacobianMap")
         
