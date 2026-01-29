@@ -104,11 +104,7 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNodeGuiTag = None
         
         # NEW: Sequence attributes for incremental slider
-        self.sequenceNode = None
-        self.sequenceBrowserNode = None
-        self.sequenceProxyNode = None
         self.isUpdatingSequence = False
-        self.sequenceBrowserObserverTag = None
 
 
     def setup(self) -> None:
@@ -1237,51 +1233,40 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def onIncrementalChanged(self, value: int) -> None:
         """
         Called when incremental slider changes.
-        Updates the sequence browser to show the corresponding transformed volume.
+        Scales the transform displacement - this automatically updates BOTH
+        the background volume and displacement overlay since both are under
+        the same transform in the hierarchy.
         """
         if self.isUpdatingSequence:
             return
-            
-        if not self.sequenceBrowserNode or not self.sequenceNode:
-            logging.warning("No sequence available for incremental display.")
+        
+        if not self._parameterNode or not self._parameterNode.transformNode:
+            logging.warning("No transform available for incremental display.")
             return
         
-        # Map slider value (10-100) to sequence item index (0-9)
-        # 10% -> index 0, 20% -> index 1, ..., 100% -> index 9
-        itemIndex = (value // 10) - 1
+        # Convert slider value (10-100) to scale (0.1-1.0)
+        scale = value / 100.0
         
-        # Ensure index is valid
-        numItems = self.sequenceNode.GetNumberOfDataNodes()
-        if itemIndex < 0 or itemIndex >= numItems:
-            logging.warning(f"Invalid sequence index: {itemIndex}")
-            return
+        # Get the BSpline transform
+        transformNode = self._parameterNode.transformNode
+        bsplineTransform = transformNode.GetTransformFromParent() # from steve's code
         
-        # Block updates to prevent recursion
-        self.isUpdatingSequence = True
+        # if not bsplineTransform:
+        #     logging.warning("Could not get transform from parent.")
+        #     return
         
-        try:
-            # Update sequence browser to show this item
-            self.sequenceBrowserNode.SetSelectedItemNumber(itemIndex)
-            
-            # Get the proxy node and ensure it's set as background
-            proxyNode = self.sequenceBrowserNode.GetProxyNode(self.sequenceNode)
-            if proxyNode:
-                # Force the proxy node to update
-                proxyNode.Modified()
-                
-                # Ensure it's set as background in all slice views
-                layoutManager = slicer.app.layoutManager()
-                for sliceViewName in layoutManager.sliceViewNames():
-                    compositeNode = layoutManager.sliceWidget(sliceViewName).mrmlSliceCompositeNode()
-                    if compositeNode.GetBackgroundVolumeID() != proxyNode.GetID():
-                        compositeNode.SetBackgroundVolumeID(proxyNode.GetID())
-                
-                logging.info(f"Displaying {value}% transformation (sequence item {itemIndex})")
-            else:
-                logging.error("Failed to get proxy node!")
+        # # Check if it has SetDisplacementScale method
+        # if not hasattr(bsplineTransform, 'SetDisplacementScale'):
+        #     logging.warning("Transform does not support displacement scaling.")
+        #     return
         
-        finally:
-            self.isUpdatingSequence = False
+        # apply the scale - this updates both volumes automatically
+        bsplineTransform.SetDisplacementScale(scale) # from steve's code 
+        
+        # Force update
+        transformNode.Modified()
+        
+        # logging.info(f"Set transform displacement scale to {scale:.1%} - both volumes updated")
                 
 
 
@@ -1805,7 +1790,6 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def onApplyButton(self) -> None:
         """
         Run processing when user clicks 'Compute Mapping' button.
-        Creates sequence of incrementally transformed volumes.
         """
         with slicer.util.tryWithErrorDisplay(_("Failed to compute voxel-wise displacement."), waitCursor=True):
             
@@ -1828,8 +1812,19 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 defaultColourMap=self.defaultColorNodeID
             )
             
-            # NEW: Create sequence of incrementally transformed background volumes
-            self.createIncrementalSequence()
+            # Apply transform to BOTH volumes so they update together
+            transformNode = self._parameterNode.transformNode
+            
+            # Apply transform to background volume
+            self._parameterNode.backgroundVolume.SetAndObserveTransformNodeID(transformNode.GetID())
+            
+            # Apply transform to displacement magnitude volume
+            displacementVolume.SetAndObserveTransformNodeID(transformNode.GetID())
+            
+            # Initialize transform scale to 100%
+            bsplineTransform = transformNode.GetTransformFromParent()
+            if bsplineTransform and hasattr(bsplineTransform, 'SetDisplacementScale'):
+                bsplineTransform.SetDisplacementScale(1.0)
             
             # Setup displacement volume display
             dispDisplay = displacementVolume.GetDisplayNode()
@@ -1854,33 +1849,28 @@ class BrainShiftModuleWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.colorMapSelector.setEnabled(True)
             self.ui.colorMapSelector.setCurrentNode(colorNode)
             
-            # Load displacement visualization as FOREGROUND
+            # Set background volume in slice views
+            slicer.util.setSliceViewerLayers(
+                background=self._parameterNode.backgroundVolume,
+                foreground=displacementVolume,
+                foregroundOpacity=self.ui.opacitySlider.value / 100
+            )
+            
+            # Load displacement visualization
             self.ui.loadedTransformVolume.setCurrentNode(displacementVolume)
             self.onLoadDisplacementVolume(flag=0)
             
-            # Setup incremental slider and initialize to 100%
+            # Setup incremental slider - start at 100%
             if hasattr(self.ui, 'incrementalSlider'):
                 self.isUpdatingSequence = True
                 self.ui.incrementalSlider.setValue(100)
                 self.ui.incrementalSlider.setEnabled(True)
                 self.isUpdatingSequence = False
             
-            # Verify the background is set correctly
-            if hasattr(self, 'sequenceProxyNode') and self.sequenceProxyNode:
-                layoutManager = slicer.app.layoutManager()
-                for sliceViewName in layoutManager.sliceViewNames():
-                    compositeNode = layoutManager.sliceWidget(sliceViewName).mrmlSliceCompositeNode()
-                    currentBG = compositeNode.GetBackgroundVolumeID()
-                    logging.info(f"{sliceViewName} background: {currentBG}")
-                    if currentBG != self.sequenceProxyNode.GetID():
-                        logging.warning(f"Background mismatch in {sliceViewName}, fixing...")
-                        compositeNode.SetBackgroundVolumeID(self.sequenceProxyNode.GetID())
-            
-            # Store for incremental display
+            # Store for reference
             self.displacementMagnitudeVolume = displacementVolume
-            imageData = displacementVolume.GetImageData()
-            scalars = imageData.GetPointData().GetScalars()
-            self._fullDisplacementArray = vtk_to_numpy(scalars).copy()
+            
+            logging.info("Transform applied to both background and displacement volumes")
 
 
 
