@@ -1,12 +1,9 @@
 # DeformView
-
 ## Overview
-
 **DeformView** provides **intuitive, quantitative visualization of non-linear deformation fields** within the 3D Slicer platform.  
 It enables users to interpret deformations using **dense, voxel-wise maps**, given a known transformation and corresponding image data.
 
 DeformView provides two complementary visualization maps:
-
 1. **Displacement Magnitude Map (mm)** – shows local tissue displacement.  
 2. **Jacobian Determinant Magnitude (%)** – shows local tissue expansion or compression.
 
@@ -17,9 +14,7 @@ A **real-time cursor display** allows users to hover over any voxel and directly
 ---
 
 ## Use Cases
-
 DeformView is useful for:
-
 - **Understanding non-linear tissue deformation**
 - **Evaluation of image registration algorithms**
 - **Research in brain shift modeling**
@@ -28,23 +23,49 @@ DeformView is useful for:
 
 ---
 
+## Installation
+
+### Prerequisites
+Download and install **3D Slicer** from the official website: [https://www.slicer.org](https://www.slicer.org)
+
+### Installing DeformView Extension
+
+1. **Clone the repository**
+   ```bash
+   git clone [repository-url]
+   ```
+
+2. **Open 3D Slicer**
+
+3. **Access Extension Wizard**
+   - Navigate to: `Module Search` → `Extension Wizard`
+
+4. **Select Extension**
+   - Click **"Select Extension"** to add additional module paths
+   - Browse and select the folder where you cloned the DeformView repository
+
+5. **Reload Slicer**
+   - Restart 3D Slicer to load the new extension
+
+6. **Access DeformView**
+   - Use the search bar in the modules dropdown
+   - Type "DeformView" to locate and launch the module
+
+---
+
 ## Panels and Their Use
 
 ### Input Selection
-
 - **Moving Image**  
   Image after the transformation has been applied.
-
 - **Fixed Image**  
   Reference image.
-
 - **Transformation**  
   Known transformation between the fixed and moving images.
 
 ---
 
 ### Compute Displacement Field Mapping
-
 - Computes both:
   - **Dense displacement magnitude volume (mm)**
   - **Dense Jacobian determinant magnitude volume (%)**
@@ -54,16 +75,14 @@ DeformView is useful for:
   - Overlays the corresponding displacement volume
 
 ### Increment Slider
+- Controls the **step size** of the applied transformation
+- Allows visualization of **0–100% of the transformation**
 
-  - Controls the **step size** of the applied transformation
-  - Allows visualization of **0–100% of the transformation**
-
-  ![](increment.gif)
+![](increment.gif)
 
 ---
 
 ### Color Map / Loading Function
-
 - Switch between:
   - **Displacement volume**
   - **Jacobian volume**
@@ -75,21 +94,11 @@ DeformView is useful for:
 
 ---
 
-### Display Settings
-
-- Adjust **overlay opacity** of the displacement or Jacobian volume
-
----
-
 ## Notes
-
 - A valid transformation must be provided to compute deformation maps.
 
 ---
 
 ## Contributors
-
-Elise Donszelmann-Lund (@elisedl1)
-
-Isabel Frolick (@isabelfrolick)
-
+- Elise Donszelmann-Lund (@elisedl1)
+- Isabel Frolick (@isabelfrolick)
