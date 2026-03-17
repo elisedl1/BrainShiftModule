@@ -1,150 +1,83 @@
 ---
-title: 'Gala: A Python package for galactic dynamics'
+title: 'DeformView: Quantitative Visualization of Non-Linear Deformation Fields for Use in Image-Guided
+Neurosurgery'
 tags:
-  - Python
-  - astronomy
-  - dynamics
-  - galactic dynamics
-  - milky way
+  - Medical Imaging
+  - Image Registration
+  - Non-linear Deformation
+  - Visualization
+  - 3D Slicer
 authors:
-  - name: Adrian M. Price-Whelan
+  - name: Isabel Frolick
     orcid: 0000-0000-0000-0000
     equal-contrib: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 3
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
-    affiliation: 3
+    affiliation: 1
+  - name: Elise Donszelmann-Lund
+    orcid: 0000-0000-0000-0000
+    equal-contrib: true
+    affiliation: 1
+  - name: Louis Collins
+    affiliation: 1
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, United States
+ - name: McGill University, Canada
    index: 1
-   ror: 00hx57361
- - name: Institution Name, Country
-   index: 2
- - name: Independent Researcher, Country
-   index: 3
-date: 13 August 2017
+date: 17 March 2026
 bibliography: paper.bib
 
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
 
-The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration).
+DeformView is a 3D Slicer module designed for dense, intuitive and quantitative visualization of non-linear deformation fields in image registration. The module produces two interactive voxel-wise overlays: a displacement magnitude map in millimeters and a Jacobian determinant map encoding local volumetric expansion and compression. A real-time cursor enables point-wise numerical readout directly on the image volume and an Increment Transform feature supports progressive visualization of the deformation across discrete time steps. DeformView can be installed from the 3D Slicer software through the Extension Manager.  
 
 # Statement of need
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+Non-linear image registration is a key task in computational medical imaging where a spatially varying deformation field maps a source image (image being transformed) onto a target image (fixed reference image). There is an extensive corpus of work on non-linear image registration methods, reflecting their broad applicability and importance across medical imaging modalities and anatomical systems. A typical non-linear image registration pipeline often iteratively optimizes the deformation field, parameterized as a deformable grid of control points, such that the transformed source image maximizes some similarity metric with the target image. As such, the final product of a non-linear image registration task is the deformed source image, which has been non-linearly warped into alignment with the target image. 
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+In progressive diagnostic monitoring, longitudinal imaging carried out across multiple timepoints to evaluate whether a disease is advancing, regressing, or remaining stable; for example, tracking tumour response to treatment or measuring neurodegeneration over time. In interventional guidance, where procedures are performed in real time,  and where accurate spatial alignment is essential for maximizing therapeutic precision, reducing operative duration, and improving outcomes. As non-linear registration is a general problem, these use cases extend across many anatomical systems and modalities. 
+
+In these non-linear image registration tasks, clinicians and surgeons must interpret the resulting deformation fields - either to guide clinical decision-making or to validate that a registration algorithm is performing correctly. This is typically done by visualizing the deformed intraoperative anatomy (source image). However, existing deformation visualization methods for non-linear image registration are largely sparse and qualitative, limiting users’ ability to interpret local tissue deformation. Correct interpretation of deformed anatomy is especially difficult for inexperienced surgeons or researchers who are not usually trained anatomists. For trainees and surgeons, these limitations may prolong procedures and increase patient risk; for researchers, they risk overlooking biologically implausible registration results. 
+
+These challenges motivate the development of better non-linear deformation visualization tools. In response to these challenges,  DeformView addresses this need by providing dense, quantitative visualization of non-linear deformation fields, supporting both clinical training and algorithmic research across the range of medical imaging tasks where registration is applied. 
 
 # State of the field                                                                                                                  
 
-Several tools exist for galactic dynamics computations:                                                     
-`galpy` [@Bovy:2015] is a Python package with similar goals,
-providing orbit integration and potential classes for galactic dynamics.                                                              
-`NEMO` [@Teuben:1995] is a well-established, comprehensive stellar dynamics                                                           
-toolbox written primarily in C, offering extensive functionality but with a                                                           
-steeper learning curve and less integration with modern Python workflows.                                                             
-Other tools like `GalPot` provide specific Milky Way potential models but lack                                                        
-the broader dynamical analysis capabilities.                                                                                          
-                                                                                                                                        
-`Gala` was built rather than contributing to existing projects for several                                                            
-reasons. First, `Gala` was designed from the ground up to integrate seamlessly                                                        
-with the Astropy ecosystem, using `astropy.units` and `astropy.coordinates`                                                           
-as core dependencies rather than optional features. This tight integration                                                            
-enables natural workflows for astronomers already using Astropy. Second,                                                              
-`Gala`'s object-oriented API with consistent interfaces across subpackages                                                            
-(potentials, integrators, dynamics) provides a more modular and extensible                                                            
-design than alternatives available at the time. Third, `Gala` fills a specific                                                        
-niche between simple demonstration codes and full N-body simulation packages                                                          
-like `Gadget` [@Springel:2005] – it focuses on the common tasks in galactic                                                             
-dynamics research (orbit integration, potential evaluation, coordinate                                                                
-transformations) while maintaining both performance through C implementations                                                         
-and usability through its Python interface.  
+The primary existing tool for deformation visualization within 3D Slicer is the Transform Visualizer module, which renders sparse representations of the deformation field. The Transform Visualizer module contains three visualizations: glyphs (arrows), uniform grid, and isocontours. Glyphs are placed at a sampled subset of voxel locations, meaning local deformation between glyph positions is entirely invisible to the user, and no numerical displacement information is conveyed.  
+
+One advantage of the Transform Visualizer module over the proposed DeformView module is the glyphs show the direction of deformation, a feature not included in DeformView. However, the DeformView functionality can be integrated with the TransformVisualizer glyphs directly in 3D Slicer without requiring integration from the user. 
+
+Transform Visualizer (3D Slicer) Sparse glyph-based visualization, qualitative only, no numerical readout, no Jacobian information. 
+
+Lack of quantitative readout — no existing tools in 3D Slicer allow users to hover over a point and get a displacement value in physical units (mm).  
+
+No Jacobian visualization in existing tools — compression/expansion information is not available in any standard 3D Slicer workflow.  
+
+No incremental/progressive deformation display — existing tools show only the final deformation state. 
 
 # Software design
 
-`Gala`'s design philosophy is based on three core principles: (1) to provide a
-user-friendly, modular, object-oriented API, (2) to use community tools and
-standards (e.g., Astropy for coordinates and units handling), and (3) to use
-low-level code (C/C++/Cython) for performance while keeping the user interface
-in Python. Within each of the main subpackages in `gala` (`gala.potential`,
-`gala.dynamics`, `gala.integrate`, etc.), we try to maintain a consistent API
-for classes and functions. For example, all potential classes share a common
-base class and implement methods for computing the potential, forces, density,
-and other derived quantities at given positions. This also works for
-compositions of potentials (i.e., multi-component potential models), which
-share the potential base class but also act as a dictionary-like container for
-different potential components. As another example, all integrators implement a
-common interface for numerically integrating orbits. The integrators and core
-potential functions are all implemented in C without support for units, but the
-Python layer handles unit conversions and prepares data to dispatch to the C
-layer appropriately.Within the coordinates subpackage, we extend Astropy's
-coordinate classes to add more specialized coordinate frames and
-transformations that are relevant for Galactic dynamics and Milky Way research.
+...
 
 # Research impact statement
 
-`Gala` has demonstrated significant research impact and grown both its user base
-and contributor community since its initial release. The package has evolved
-through contributions from over 18 developers beyond the original core developer
-(@adrn), with community members adding new features, reporting bugs, and
-suggesting new features.
+In image-guided neurosurgery (IGNS), patient-to-image registration is used to align preoperative scans with patient anatomy. Registration has been shown to enhance the surgeon’s understanding and improve accurate targeting of brain structures, leading to improved patient outcomes [1]. During brain tumour surgery, ’brain shift’ or non-linear shifts in brain tissue cause a mismatch between preoperative images and the patient’s current anatomy [2]. It is then necessary to use non-linear image registration to deform the preoperative images into alignment with the intraoperative anatomy. 
 
-While `Gala` started as a tool primarily to support the core developer's
-research, it has expanded organically to support a range of applications across
-domains in astrophysics related to Milky Way and galactic dynamics. The package
-has been used in over 400 publications (according to Google Scholar) spanning
-topics in galactic dynamics such as modeling stellar streams [@Pearson:2017],
-Milky Way mass modeling, and interpreting kinematic and stellar population
-trends in the Galaxy. `Gala` is integrated within the Astropy ecosystem as an
-affiliated package and has built functionality that extends the widely-used
-`astropy.units` and `astropy.coordinates` subpackages. `Gala`'s impact extends
-beyond citations in research: Because of its focus on usability and user
-interface design, `Gala` has also been incorporated into graduate-level galactic
-dynamics curricula at multiple institutions.
+During brain tumour resection surgery, the brain undergoes non-linear deformations or ‘brain shift’ due to the removal of tissue, changes in intercranial pressure when the skull is opened, medications, etc. Due to brain shift, intraoperative imaging does not align with preoperative imaging spaces, necessitating deformable image registration to put these images in the same space.  Computational imaging researchers who are developing these deformable registration methods must interpret where the deformation occurs to understand where the algorithms are being applied. 
 
-`Gala` has been downloaded over 100,000 times from PyPI and conda-forge yearly
-(or ~2,000 downloads per week) over the past few years, demonstrating a broad
-and active user community. Users span career stages from graduate students to
-faculty and other established researchers and represent institutions around the
-world. This broad adoption and active participation validate `Gala`'s role as
-core community infrastructure for galactic dynamics research.
+# Overview of DeformView Module
+
+DeformView is an open-source 3D Slicer module designed for research and training use in medical imaging tasks involving deformable image registration. The module accepts a deformation field (transform node) and a reference image as inputs and produces interactive, quantitative visualizations of the transformation directly overlaid on the image. 
+
+Visualization Maps 
+
+DeformView provides two complementary dense visualization maps: 
+
+Displacement Magnitude Map. The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. There are numerous scientifically-derived, intuitive colour maps available, which encode displacement magnitude continuously across the image volume. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, enabling point-wise quantitative comprehension directly on the volume. This displacement magnitude map provides a dense spatial understanding of where and by how much deformation has occurred in each discrete location in the 3D volume, intuitively projected into 2D space for ease of interpretation.  
+
+Jacobian Determinant Magnitude Map. The second map renders the magnitude of the Jacobian determinant of the deformation field at every voxel, expressed as a percentage of deformation. The Jacobian determinant encodes local volumetric change. Values greater than 1.0 indicate local tissue expansion, values less than 1.0 indicate compression, and a value of exactly 1.0 indicates no local volume change. The map encodes these values with an intuitive three-colour scheme: compression (values less than 1.0) is rendered in blue as negative percentages, expansion (values greater than 1.0) in red as positive percentages, and no change (values equal to 1.0) in white. Displaying this map densely allows researchers to identify regions of physiologically implausible compression or expansion, which may indicate registration errors, and support biological validation of registration algorithms. 
+Increment Transform Feature 
+
+DeformView introduces an Increment Transform feature. Rather than displaying only the final deformation, the transformation is incrementally applied to the moving image across 10 discrete steps (0.1x, 0.2x, … 1.0x of the full transform). This sliding scale allows users to observe the progressive warping of the image and develop an intuitive understanding of how the deformation accumulates spatially, which is particularly useful for training and for diagnosing registration behaviour at intermediate stages.  
 
 # Mathematics
 
@@ -188,12 +121,11 @@ Figure sizes can be customized by adding an optional second parameter:
 
 # AI usage disclosure
 
-No generative AI tools were used in the development of this software, the writing
+Generative AI tools were used in the development of this software. It was not used for writing
 of this manuscript, or the preparation of supporting materials.
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+We acknowledge contributions from Etienne....
 
 # References
