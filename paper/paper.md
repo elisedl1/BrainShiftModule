@@ -28,17 +28,17 @@ bibliography: paper.bib
 
 # Summary
 
-DeformView is a 3D Slicer module designed for novel dense, intuitive and quantitative visualization of non-linear deformation fields in image registration. The module produces two interactive voxel-wise overlays: a displacement magnitude map in millimeters and a Jacobian determinant map encoding local volumetric expansion and compression. A real-time cursor enables point-wise numerical readout directly on the image volume and an Increment Transform feature supports progressive visualization of the deformation across discrete time steps. DeformView can be installed from the 3D Slicer software through the Extension Wizard.  
+DeformView is a 3D Slicer module designed for novel dense, intuitive, and quantitative visualization of non-linear deformation fields in image registration. The module produces two interactive voxel-wise overlays: a displacement magnitude map in millimeters and a Jacobian determinant map encoding local volumetric expansion and compression. A real-time cursor enables point-wise numerical readout directly on the image volume, and an Increment Transform feature supports progressive visualization of the deformation across discrete time steps. DeformView can be installed from the 3D Slicer software through the Extension Wizard.
 
 # Statement of need
 
-Non-linear image registration is a key task in computational medical imaging where a spatially varying deformation field maps a source image (image being transformed) onto a target image (fixed reference image). There is an extensive corpus of work on non-linear image registration methods, reflecting their broad applicability and importance across medical imaging modalities and anatomical systems. A typical non-linear image registration pipeline often iteratively optimizes the deformation field, parameterized as a deformable grid of control points, such that the transformed source image maximizes some similarity metric with the target image. As such, the final product of a non-linear image registration task is the deformed source image, which has been non-linearly warped into alignment with the target image. 
+Non-linear image registration is a key task in computation medical imaging, where a spatially varying deformation field maps a source image onto a fixed target image. There is an extensive body of work on non-linear registration methods, reflecting its broad applicability across imaging modalities. While the primary output of a registration pipeline is the deformed source image – warped into alignment with the target – the underlying deformation field itself encodes quantitative information about spatial correspondence and local tissue mechanics.  
 
-In progressive diagnostic monitoring, longitudinal imaging carried out across multiple timepoints to evaluate whether a disease is advancing, regressing, or remaining stable; for example, tracking tumour response to treatment or measuring neurodegeneration over time. In interventional guidance, where procedures are performed in real time,  and where accurate spatial alignment is essential for maximizing therapeutic precision, reducing operative duration, and improving outcomes. As non-linear registration is a general problem, these use cases extend across many anatomical systems and modalities. 
+Clinicians and surgeons must interpret these resulting deformation fields, either to guide clinical decision-making or to validate that a registration algorithm is performing correctly, by visualizing the deformed anatomy (source image). However, existing deformation visualization methods for non-linear image registration are largely sparse and qualitative, making it difficult to interpret and localize tissue deformation. Correct interpretation of deformed anatomy is especially difficult for inexperienced surgeons or researchers. 
 
-In these non-linear image registration tasks, clinicians and surgeons must interpret the resulting deformation fields - either to guide clinical decision-making or to validate that a registration algorithm is performing correctly. This is typically done by visualizing the deformed intraoperative anatomy (source image). However, existing deformation visualization methods for non-linear image registration are largely sparse and qualitative, limiting users’ ability to interpret local tissue deformation. Correct interpretation of deformed anatomy is especially difficult for inexperienced surgeons or researchers who are not usually trained anatomists. For trainees and surgeons, these limitations may prolong procedures and increase patient risk; for researchers, they risk overlooking biologically implausible registration results. 
+In image-guided neurosurgery (IGNS), patient-to-image registration is used to align preoperative scans with patient anatomy. ‘Brain shift’, or non-linear shifts in brain tissue, cause a mismatch between preoperative images and the patient’s current anatomy, necessitating the use of non-linear image registration to deform preoperative images into the intraoperative image space. Those developing registration methods must be able to accurately interpret where deformation is occurring to understand how the algorithms are being applied.   
 
-These challenges motivate the development of better non-linear deformation visualization tools. In response to these challenges,  DeformView addresses this need by providing dense, quantitative visualization of non-linear deformation fields, supporting both clinical training and algorithmic research across the range of medical imaging tasks where registration is applied. 
+DeformView is designed to address these challenges by providing an intuitive, user-friendly 3D Slicer plugin that enables efficient, dense, and quantitative visualization of deformation fields in medical imaging tasks where registration is applied.  
 
 # State of the field                                                                                                                  
 
@@ -54,30 +54,42 @@ No Jacobian visualization in existing tools — compression/expansion informatio
 
 No incremental/progressive deformation display — existing tools show only the final deformation state. 
 
+# State of the field
+
+The primary existing tool for deformation visualization within 3D Slicer is the Transform Visualizer module, which renders sparse representations of the deformation field. The Transform Visualizer module contains three visualizations: glyphs (arrows), uniform grid, and isocontours. These visualizations are placed at a sampled subset of voxel locations, meaning local deformation between glyph positions is entirely invisible to the user, and no numerical displacement information is conveyed.  
+
+The glyph (arrow) visualization does show the direction of deformation, which can advantageously show the user how the image has deformed from its initial state. However, existing tools like the Transform Visualizer module only show the final state deformation; the user is unable to visualize how the deformation was incrementally applied or how specific anatomical regions were compressed or expanded to accommodate the deformation. These unimplemented features increase the user’s uncertainty and lack of confidence when interpreting deformation fields.  
+
 # Software design
 
-...
+DeformView is implemented as a Python extension for 3D Slicer, an open-source medical image computing platform available on Linux, macOS, and Windows under a BSD-style license. Most Slicer basic infrastructure is implemented in C++ and made available in Python through the slicer namespace by PythonQt and VTK Python Wrapper. 
+
+The DeformView module was developed using Python 3.12 and Qt6, following community guidelines for Slicer extension development, and built from the official Slicer extension template to ensure consistency and modularity with the Slicer ecosystem. The core architecture follows Slicer conventions, maintaining the standard Widget and Logic class structure. 
+
+A key design principle of DeformView is compatibility, both with Slicer's data model and with existing modules. All input selectors expose only the data types relevant to each function: for example, the transformation input accepts all transform types available in Slicer (linear, BSpline, grid, thin-plate spline, and composite), while incompatible data types such as images are hidden from selection.  
 
 # Research impact statement
 
-In image-guided neurosurgery (IGNS), patient-to-image registration is used to align preoperative scans with patient anatomy. Registration has been shown to enhance the surgeon’s understanding and improve accurate targeting of brain structures, leading to improved patient outcomes [1]. During brain tumour surgery, ’brain shift’ or non-linear shifts in brain tissue cause a mismatch between preoperative images and the patient’s current anatomy [2]. It is then necessary to use non-linear image registration to deform the preoperative images into alignment with the intraoperative anatomy. 
+DeformView has generated demonstrable interest from the medical imaging research community beyond its core development team. The module was presented at NA-MIC Project Week 43 and 44 [CITE], the biannual workshop hosted by the National Alliance for Medical Image Computing (NA-MIC), the organization responsible for the continued development of 3D Slicer. These presentations generated substantive discussion among Slicer developers and requests for adoption from external research groups, including researchers at Texas A&M University College of Dentistry for applications in orofacial surgery, and at the Instituto de Microelectrónica Aplicada, Universidad de Las Palmas de Gran Canaria, Spain. The DeformView module has also been used in ongoing research on groupwise ultrasound-CT image registration for spinal surgery [CITE].  
 
-During brain tumour resection surgery, the brain undergoes non-linear deformations or ‘brain shift’ due to the removal of tissue, changes in intercranial pressure when the skull is opened, medications, etc. Due to brain shift, intraoperative imaging does not align with preoperative imaging spaces, necessitating deformable image registration to put these images in the same space.  Computational imaging researchers who are developing these deformable registration methods must interpret where the deformation occurs to understand where the algorithms are being applied. 
+Paragraph locked by Isabel Frolick
+This work is additionally being presented as a peer-reviewed poster at the Imaging Network of Ontario (ImNO) 2026 symposium in the Image Guided Intervention and Surgery category.  
 
 # Overview of DeformView Module
 
-DeformView is an open-source 3D Slicer module designed for research and training use in medical imaging tasks involving deformable image registration. The module accepts a deformation field (transform node) and a reference image as inputs and produces interactive, quantitative visualizations of the transformation directly overlaid on the image. 
+DeformView accepts a deformation field (transform node) and a reference image as inputs and produces two complementary, dense quantitative visualizations overlaid directly on the image. 
 
-Visualization Maps 
+Displacement Magnitude Map. The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. That is to say, how much that voxel has moved between its original position and its deformed position, in millimeters. To do this, he transform is converted into a dense vector field sampled across the entire reference image grid, and the length of each displacement vector is stored as a scalar value and displayed using a scientifically derived colour map. There are eight scientifically-derived, intuitive colour maps available for this map, including consideration for colour-blind readability. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, as shown in Figure X. This provides a dense spatial understanding of where and by how much deformation has occurred across the full 3D volume.  
 
-DeformView provides two complementary dense visualization maps: 
+Jacobian Determinant Magnitude Map. This map renders the magnitude of the Jacobian determinant of the deformation field at every voxel, expressed as a percentage of local volumetric change. That is to say, the magnitude of Jacobian determinant indicates if a region has expanded or contracted with the deformation field. Tissue expansion (values > 1.0) is rendered in red, tissue compression (values < 1.0) in blue, and no change (values = 1.0) in white, as shown in Figure X. Displaying this map densely allows researchers to identify changes to anatomical regions or regions of physiologically implausible compression or expansion, which may indicate registration errors, and support biological validation of registration algorithms. 
 
-Displacement Magnitude Map. The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. There are numerous scientifically-derived, intuitive colour maps available, which encode displacement magnitude continuously across the image volume. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, enabling point-wise quantitative comprehension directly on the volume. This displacement magnitude map provides a dense spatial understanding of where and by how much deformation has occurred in each discrete location in the 3D volume, intuitively projected into 2D space for ease of interpretation.  
+ 
+Increment Transform. DeformView introduces an Increment Transform feature. Rather than displaying only the final deformation, the transformation is incrementally applied to the moving image across 10 discrete steps (0.1x, 0.2x, … 1.0x of the full transform). This sliding scale allows users to observe the progressive warping of the image and develop an intuitive understanding of how the deformation accumulates spatially, which is particularly useful for training and for diagnosing registration behaviour at intermediate stages.  
 
-Jacobian Determinant Magnitude Map. The second map renders the magnitude of the Jacobian determinant of the deformation field at every voxel, expressed as a percentage of deformation. The Jacobian determinant encodes local volumetric change. Values greater than 1.0 indicate local tissue expansion, values less than 1.0 indicate compression, and a value of exactly 1.0 indicates no local volume change. The map encodes these values with an intuitive three-colour scheme: compression (values less than 1.0) is rendered in blue as negative percentages, expansion (values greater than 1.0) in red as positive percentages, and no change (values equal to 1.0) in white. Displaying this map densely allows researchers to identify regions of physiologically implausible compression or expansion, which may indicate registration errors, and support biological validation of registration algorithms. 
-Increment Transform Feature 
+ 
+Integration of Previous Methods 
 
-DeformView introduces an Increment Transform feature. Rather than displaying only the final deformation, the transformation is incrementally applied to the moving image across 10 discrete steps (0.1x, 0.2x, … 1.0x of the full transform). This sliding scale allows users to observe the progressive warping of the image and develop an intuitive understanding of how the deformation accumulates spatially, which is particularly useful for training and for diagnosing registration behaviour at intermediate stages.  
+DeformView integrates with the existing 3D Slicer Transform Module, combining displacement magnitude maps with overlaid glyphs from the Transform Module in a single view. As shown in Figure X, this overlay provides both a quantified, spatially localized understanding of deformation magnitude and an intuitive representation of local direction changes.  
 
 # Mathematics
 
@@ -121,11 +133,10 @@ Figure sizes can be customized by adding an optional second parameter:
 
 # AI usage disclosure
 
-Generative AI tools were used in the development of this software. It was not used for writing
-of this manuscript, or the preparation of supporting materials.
+Generative AI tools (Claude Sonnet 4.6) were used in the development of this software, specifically for debugging purposes. Authors have reviewed and validated all AI-assisted code output and made all core design decisions. AI was not used for writing this manuscript, or the preparation of supporting materials.  
 
 # Acknowledgements
 
-We acknowledge contributions from Etienne....
+We acknowledge contributions from Etienne Leger, Taj Choksi, Raphael Christin, Kaleem Siddiqi and Louis Collins
 
 # References
