@@ -40,25 +40,11 @@ In image-guided neurosurgery (IGNS), patient-to-image registration is used to al
 
 DeformView is designed to address these challenges by providing an intuitive, user-friendly 3D Slicer plugin that enables efficient, dense, and quantitative visualization of deformation fields in medical imaging tasks where registration is applied.  
 
-# State of the field                                                                                                                  
-
-The primary existing tool for deformation visualization within 3D Slicer is the Transform Visualizer module, which renders sparse representations of the deformation field. The Transform Visualizer module contains three visualizations: glyphs (arrows), uniform grid, and isocontours. Glyphs are placed at a sampled subset of voxel locations, meaning local deformation between glyph positions is entirely invisible to the user, and no numerical displacement information is conveyed.  
-
-One advantage of the Transform Visualizer module over the proposed DeformView module is the glyphs show the direction of deformation, a feature not included in DeformView. However, the DeformView functionality can be integrated with the TransformVisualizer glyphs directly in 3D Slicer without requiring integration from the user. 
-
-Transform Visualizer (3D Slicer) Sparse glyph-based visualization, qualitative only, no numerical readout, no Jacobian information. 
-
-Lack of quantitative readout — no existing tools in 3D Slicer allow users to hover over a point and get a displacement value in physical units (mm).  
-
-No Jacobian visualization in existing tools — compression/expansion information is not available in any standard 3D Slicer workflow.  
-
-No incremental/progressive deformation display — existing tools show only the final deformation state. 
-
 # State of the field
 
 The primary existing tool for deformation visualization within 3D Slicer is the Transform Visualizer module, which renders sparse representations of the deformation field. The Transform Visualizer module contains three visualizations: glyphs (arrows), uniform grid, and isocontours. These visualizations are placed at a sampled subset of voxel locations, meaning local deformation between glyph positions is entirely invisible to the user, and no numerical displacement information is conveyed.  
 
-The glyph (arrow) visualization does show the direction of deformation, which can advantageously show the user how the image has deformed from its initial state. However, existing tools like the Transform Visualizer module only show the final state deformation; the user is unable to visualize how the deformation was incrementally applied or how specific anatomical regions were compressed or expanded to accommodate the deformation. These unimplemented features increase the user’s uncertainty and lack of confidence when interpreting deformation fields.  
+The glyph (arrow) visualization does show the direction of deformation, which can advantageously show the user how the image has deformed from its initial state. However, existing tools like the Transform Visualizer module only show the final state deformation; the user is unable to visualize how the deformation was incrementally applied or how specific anatomical regions were compressed or expanded to accommodate the deformation. These unimplemented features increase the user’s uncertainty and lack of confidence when interpreting deformation fields.   
 
 # Software design
 
