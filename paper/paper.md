@@ -15,6 +15,9 @@ authors:
     orcid: 0009-0000-4634-9118
     equal-contrib: true
     affiliation: 1
+  - name: Kaleem Siddiqi
+    orcid: 0000-0002-7347-9716
+    affiliation: 1
   - name: D. Louis Collins
     orcid: 0000-0002-8432-7021
     affiliation: 1
