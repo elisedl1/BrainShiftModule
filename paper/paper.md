@@ -80,7 +80,7 @@ DeformView introduces an Increment Transform feature. Rather than displaying onl
 
 ![DeformView visualizations versus existing Transform module visualizations. Top left: displacement magnitude overlay. Top right: jacobian overlay. Bottom left: glyph visualization. Bottom right: grid visualization.\label{fig:four_plot}](figures/4_plot.png)
 
-Integration of Previous Methods:
+### Integration of Previous Methods
 
 DeformView integrates with the existing 3D Slicer Transform Module, combining displacement magnitude maps with overlaid glyphs from the Transform Module in a single view. As shown in Figure X, this overlay provides both a quantified, spatially localized understanding of deformation magnitude and an intuitive representation of local direction changes.  
 
@@ -100,7 +100,7 @@ DeformView achieved higher mean scores than Transform Visualizer across all four
 (1–5 scale; green is better). DeformView significantly outperforms existing module on helpfulness (p=0.008) and intuition
 (p=0.027), with higher mean scores across all metrics.\label{fig:user}](figures/user_study.png)
 
-Conclusion
+### Conclusion
 
 The module shows promise as a training and research tool, with future work aimed at evaluation by expert users (clinicians), additional features, and open-source integration within surgical navigation systems, such as IBIS [cite].
 
