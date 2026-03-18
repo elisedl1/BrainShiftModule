@@ -1,4 +1,4 @@
----
+<img width="468" height="25" alt="image" src="https://github.com/user-attachments/assets/07569720-4bd7-46cd-a4bc-e0369617e277" />---
 title: 'DeformView: Quantitative Visualization of Non-Linear Deformation Fields for Use in Image-Guided
 Neurosurgery'
 tags:
@@ -28,7 +28,7 @@ bibliography: paper.bib
 
 # Summary
 
-DeformView is a 3D Slicer module designed for novel dense, intuitive, and quantitative visualization of non-linear deformation fields in image registration. The module produces two interactive voxel-wise overlays: a displacement magnitude map in millimeters and a Jacobian determinant map encoding local volumetric expansion and compression. A real-time cursor enables point-wise numerical readout directly on the image volume, and an Increment Transform feature supports progressive visualization of the deformation across discrete time steps. DeformView can be installed from the 3D Slicer software through the Extension Wizard.
+DeformView is a 3D Slicer module (@fedorov2012) designed for novel dense, intuitive, and quantitative visualization of non-linear deformation fields in image registration. The module produces two interactive voxel-wise overlays: a displacement magnitude map in millimeters and a Jacobian determinant map encoding local volumetric expansion and compression. A real-time cursor enables point-wise numerical readout directly on the image volume, and an Increment Transform feature supports progressive visualization of the deformation across discrete time steps. DeformView can be installed from the 3D Slicer software through the Extension Wizard.
 
 # Statement of need
 
