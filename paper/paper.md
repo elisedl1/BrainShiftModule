@@ -9,7 +9,7 @@ tags:
   - 3D Slicer
 authors:
   - name: Isabel Frolick
-    orcid: 0000-0000-0000-0000
+    orcid: 0009-0001-5947-6973
     equal-contrib: true
     affiliation: 1
   - name: Elise Donszelmann-Lund
