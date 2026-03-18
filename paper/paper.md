@@ -65,7 +65,7 @@ This work is additionally being presented as a peer-reviewed poster at the Imagi
 
 DeformView accepts a deformation field (transform node) and a reference image as inputs and produces two complementary, dense quantitative visualizations overlaid directly on the image. 
 
-![Overview of DeformView 3D Slicer Module. Left: user interface for the proposed module Right: displacement magnitude overlaid with reference image, quantified displacement with mouse pointer.\label{fig:UI_overview}](figures/UI_overview.png)
+![Overview of DeformView 3D Slicer Module. Left: user interface for the proposed module Right: dense colour map (red is higher deformation) with cursor displaying point-wise deformation magnitude on hover.\label{fig:UI_overview}](figures/UI_overview.png)
 
 Displacement Magnitude Map. The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. That is to say, how much that voxel has moved between its original position and its deformed position, in millimeters. To do this, he transform is converted into a dense vector field sampled across the entire reference image grid, and the length of each displacement vector is stored as a scalar value and displayed using a scientifically derived colour map. There are eight scientifically-derived, intuitive colour maps available for this map, including consideration for colour-blind readability. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, as shown in Figure X. This provides a dense spatial understanding of where and by how much deformation has occurred across the full 3D volume.  
 
