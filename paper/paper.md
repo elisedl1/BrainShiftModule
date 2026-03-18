@@ -79,20 +79,39 @@ This work is additionally being presented as a peer-reviewed poster at the Imagi
 
 DeformView accepts a deformation field (transform node) and a reference image as inputs and produces two complementary, dense quantitative visualizations overlaid directly on the image. 
 
-![Caption for example figure.\label{fig:example}](figures/UI_overview.png)
+![Overview of DeformView 3D Slicer Module. Left: user interface for the proposed module Right: displacement magnitude overlaid with reference image, quantified displacement with mouse pointer.\label{fig:UI_overview}](figures/UI_overview.png)
 
 Displacement Magnitude Map. The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. That is to say, how much that voxel has moved between its original position and its deformed position, in millimeters. To do this, he transform is converted into a dense vector field sampled across the entire reference image grid, and the length of each displacement vector is stored as a scalar value and displayed using a scientifically derived colour map. There are eight scientifically-derived, intuitive colour maps available for this map, including consideration for colour-blind readability. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, as shown in Figure X. This provides a dense spatial understanding of where and by how much deformation has occurred across the full 3D volume.  
 
 Jacobian Determinant Magnitude Map. This map renders the magnitude of the Jacobian determinant of the deformation field at every voxel, expressed as a percentage of local volumetric change. That is to say, the magnitude of Jacobian determinant indicates if a region has expanded or contracted with the deformation field. Tissue expansion (values > 1.0) is rendered in red, tissue compression (values < 1.0) in blue, and no change (values = 1.0) in white, as shown in Figure X. Displaying this map densely allows researchers to identify changes to anatomical regions or regions of physiologically implausible compression or expansion, which may indicate registration errors, and support biological validation of registration algorithms. 
 
- 
 Increment Transform. DeformView introduces an Increment Transform feature. Rather than displaying only the final deformation, the transformation is incrementally applied to the moving image across 10 discrete steps (0.1x, 0.2x, … 1.0x of the full transform). This sliding scale allows users to observe the progressive warping of the image and develop an intuitive understanding of how the deformation accumulates spatially, which is particularly useful for training and for diagnosing registration behaviour at intermediate stages.  
 
- 
+![DeformView visualizations versus existing Transform module visualizations. Top left: displacement magnitude overlay. Top right: jacobian overlay. Bottom left: glyph visualization. Bottom right: grid visualization.\label{fig:four_plot}](figures/4_plot.png)
+
 Integration of Previous Methods 
 
 DeformView integrates with the existing 3D Slicer Transform Module, combining displacement magnitude maps with overlaid glyphs from the Transform Module in a single view. As shown in Figure X, this overlay provides both a quantified, spatially localized understanding of deformation magnitude and an intuitive representation of local direction changes.  
 
+![Integration of DeformView displacement magnitude and existing Transform glyph visualization.\label{fig:glyph}](figures/glyph_overlay.png)
+
+# Preliminary Results
+
+To evaluate if DeformView has achieved its stated goals to improve user interpretability and confidence when visualizing deformed images, we conducted a user study in which participants were randomly shown one image pair from three cases of preoperative and intraoperative T2-FLAIR brain MRI and tasked with interpreting the deformation using both DeformView and Transform Visualizer. 
+
+Ten participants (technical researchers without clinical expertise, mean imaging research experience: 2.9 years) completed the study. Participants were given unlimited time to freely explore each module before providing responses. The image pairs were randomized, and a counterbalanced design was employed to control for order effects.  
+
+Module functionality was assessed on four attributes: helpfulness in comprehension, interpretability, intuitiveness, and user confidence. The assessment has been conducted using a 5-point Likert scale (1 = None, 5 = Great) and the System Usability Scale [CITE]. 
+
+DeformView achieved higher mean scores than Transform Visualizer across all four attributes (mean: 4.1/5.0 vs. 3.2/5.0; standard deviation range: 4.0–4.3 vs. 3.0–3.5). Improvements in helpfulness and intuitiveness reached statistical significance (p = 0.008 and p = 0.027, respectively). Overall, 80% of participants (8/10) preferred DeformView over Transform Visualizer. On the SUS, DeformView achieved an adjusted mean score of 82.8/100 (std: 14.6), which falls in the "excellent" usability range per established SUS benchmarks [Bangor, 2009]. 
+
+![User study (n=10) results comparing our DeformView module and existing Transform module on four attributes
+(1–5 scale; green is better). DeformView significantly outperforms existing module on helpfulness (p=0.008) and intuition
+(p=0.027), with higher mean scores across all metrics.\label{fig:user}](figures/user_study.png)
+
+Conclusion
+
+The module shows promise as a training and research tool, with future work aimed at evaluation by expert users (clinicians), additional features, and open-source integration within surgical navigation systems, such as IBIS [cite].
 
 # Citations
 
