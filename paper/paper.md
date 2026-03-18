@@ -62,7 +62,7 @@ This work is additionally being presented as a peer-reviewed poster at the Imagi
 
 # Overview of DeformView Module
 
-DeformView accepts a deformation field (transform node) and a reference image as inputs and produces two complementary, dense quantitative visualizations overlaid directly on the image, as shown in \autoref{fig: UI_overview}. 
+DeformView accepts a deformation field (transform node) and a reference image as inputs and produces two complementary, dense quantitative visualizations overlaid directly on the image, as shown in \autoref{fig:UI_overview}. 
 
 ![Overview of DeformView 3D Slicer Module. Left: user interface for the proposed module Right: dense colour map (red is higher deformation) with cursor displaying point-wise deformation magnitude on hover.\label{fig:UI_overview}](figures/UI_overview.png)
 
