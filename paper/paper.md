@@ -66,15 +66,15 @@ DeformView accepts a deformation field (transform node) and a reference image as
 
 ![Overview of DeformView 3D Slicer Module. Left: user interface for the proposed module Right: dense colour map (red is higher deformation) with cursor displaying point-wise deformation magnitude on hover.\label{fig:UI_overview}](figures/UI_overview.png)
 
-Displacement Magnitude Map:
+### Displacement Magnitude Map
 
 The first map renders the Euclidean magnitude of the displacement vector at every voxel, in millimeters. That is to say, how much that voxel has moved between its original position and its deformed position, in millimeters. To do this, he transform is converted into a dense vector field sampled across the entire reference image grid, and the length of each displacement vector is stored as a scalar value and displayed using a scientifically derived colour map. There are eight scientifically-derived, intuitive colour maps available for this map, including consideration for colour-blind readability. An interactive voxel-wise cursor displays the numerical displacement magnitude at the pointer location in real time, as shown in Figure X. This provides a dense spatial understanding of where and by how much deformation has occurred across the full 3D volume.  
 
-Jacobian Determinant Magnitude Map:
+### Jacobian Determinant Magnitude Map
 
 This map renders the magnitude of the Jacobian determinant of the deformation field at every voxel, expressed as a percentage of local volumetric change. That is to say, the magnitude of Jacobian determinant indicates if a region has expanded or contracted with the deformation field. Tissue expansion (values > 1.0) is rendered in red, tissue compression (values < 1.0) in blue, and no change (values = 1.0) in white, as shown in Figure X. Displaying this map densely allows researchers to identify changes to anatomical regions or regions of physiologically implausible compression or expansion, which may indicate registration errors, and support biological validation of registration algorithms. 
 
-Increment Transform:
+### Increment Transform:
 
 DeformView introduces an Increment Transform feature. Rather than displaying only the final deformation, the transformation is incrementally applied to the moving image across 10 discrete steps (0.1x, 0.2x, … 1.0x of the full transform). This sliding scale allows users to observe the progressive warping of the image and develop an intuitive understanding of how the deformation accumulates spatially, which is particularly useful for training and for diagnosing registration behaviour at intermediate stages.  
 
